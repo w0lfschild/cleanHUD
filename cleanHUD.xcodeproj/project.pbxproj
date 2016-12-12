@@ -10,6 +10,9 @@
 		FB0CB5941DF919A600B7DCAA /* ISSoundAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = FB0CB5931DF919A600B7DCAA /* ISSoundAdditions.m */; };
 		FB4907371D62BE6D00FA9D73 /* cleanHUD.m in Sources */ = {isa = PBXBuildFile; fileRef = FB4907361D62BE6D00FA9D73 /* cleanHUD.m */; };
 		FB49073F1D62C22D00FA9D73 /* ZKSwizzle.m in Sources */ = {isa = PBXBuildFile; fileRef = FB49073E1D62C22D00FA9D73 /* ZKSwizzle.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
+		FB62A75F1DFE1A70009451CB /* display_icon.png in Resources */ = {isa = PBXBuildFile; fileRef = FB62A75D1DFE1A70009451CB /* display_icon.png */; };
+		FB62A7601DFE1A70009451CB /* keyboard_icon.png in Resources */ = {isa = PBXBuildFile; fileRef = FB62A75E1DFE1A70009451CB /* keyboard_icon.png */; };
+		FB9507801DFE01A00086A7F8 /* AYProgressIndicator.m in Sources */ = {isa = PBXBuildFile; fileRef = FB95077F1DFE01A00086A7F8 /* AYProgressIndicator.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -21,6 +24,10 @@
 		FB49073C1D62C04B00FA9D73 /* readme.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = readme.md; sourceTree = "<group>"; };
 		FB49073D1D62C22D00FA9D73 /* ZKSwizzle.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ZKSwizzle.h; path = cleanHUD/ZKSwizzle.h; sourceTree = SOURCE_ROOT; };
 		FB49073E1D62C22D00FA9D73 /* ZKSwizzle.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = ZKSwizzle.m; path = cleanHUD/ZKSwizzle.m; sourceTree = SOURCE_ROOT; };
+		FB62A75D1DFE1A70009451CB /* display_icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = display_icon.png; path = cleanHUD/display_icon.png; sourceTree = SOURCE_ROOT; };
+		FB62A75E1DFE1A70009451CB /* keyboard_icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = keyboard_icon.png; path = cleanHUD/keyboard_icon.png; sourceTree = SOURCE_ROOT; };
+		FB95077E1DFE01A00086A7F8 /* AYProgressIndicator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AYProgressIndicator.h; path = cleanHUD/AYProgressIndicator.h; sourceTree = SOURCE_ROOT; };
+		FB95077F1DFE01A00086A7F8 /* AYProgressIndicator.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = AYProgressIndicator.m; path = cleanHUD/AYProgressIndicator.m; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -64,6 +71,8 @@
 			children = (
 				FB4907401D62C23100FA9D73 /* ZKSwizzle */,
 				FB20C4491DFB393100D33CD9 /* ISSoundAdditions */,
+				FB9507811DFE01AA0086A7F8 /* AYProgressIndicator */,
+				FB62A7611DFE1A76009451CB /* Icons */,
 				FB4907361D62BE6D00FA9D73 /* cleanHUD.m */,
 				FB49073C1D62C04B00FA9D73 /* readme.md */,
 				FB4907301D62BDF200FA9D73 /* Info.plist */,
@@ -79,6 +88,24 @@
 				FB49073E1D62C22D00FA9D73 /* ZKSwizzle.m */,
 			);
 			name = ZKSwizzle;
+			sourceTree = "<group>";
+		};
+		FB62A7611DFE1A76009451CB /* Icons */ = {
+			isa = PBXGroup;
+			children = (
+				FB62A75D1DFE1A70009451CB /* display_icon.png */,
+				FB62A75E1DFE1A70009451CB /* keyboard_icon.png */,
+			);
+			name = Icons;
+			sourceTree = "<group>";
+		};
+		FB9507811DFE01AA0086A7F8 /* AYProgressIndicator */ = {
+			isa = PBXGroup;
+			children = (
+				FB95077E1DFE01A00086A7F8 /* AYProgressIndicator.h */,
+				FB95077F1DFE01A00086A7F8 /* AYProgressIndicator.m */,
+			);
+			name = AYProgressIndicator;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -143,6 +170,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FB62A75F1DFE1A70009451CB /* display_icon.png in Resources */,
+				FB62A7601DFE1A70009451CB /* keyboard_icon.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -212,6 +241,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FB9507801DFE01A00086A7F8 /* AYProgressIndicator.m in Sources */,
 				FB4907371D62BE6D00FA9D73 /* cleanHUD.m in Sources */,
 				FB49073F1D62C22D00FA9D73 /* ZKSwizzle.m in Sources */,
 				FB0CB5941DF919A600B7DCAA /* ISSoundAdditions.m in Sources */,
@@ -317,7 +347,7 @@
 				DEVELOPMENT_TEAM = EX596BNL45;
 				INFOPLIST_FILE = cleanHUD/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Bundles";
-				PRODUCT_BUNDLE_IDENTIFIER = org.w0lf.template;
+				PRODUCT_BUNDLE_IDENTIFIER = org.w0lf.cleanHUD;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				WRAPPER_EXTENSION = bundle;
@@ -331,7 +361,7 @@
 				DEVELOPMENT_TEAM = EX596BNL45;
 				INFOPLIST_FILE = cleanHUD/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Bundles";
-				PRODUCT_BUNDLE_IDENTIFIER = org.w0lf.template;
+				PRODUCT_BUNDLE_IDENTIFIER = org.w0lf.cleanHUD;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				WRAPPER_EXTENSION = bundle;
