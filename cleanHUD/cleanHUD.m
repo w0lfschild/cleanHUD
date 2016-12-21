@@ -8,7 +8,7 @@
 
 // Imports & Includes
 @import AppKit;
-@import CoreImage;
+@import QuartzCore;
 @import CoreAudio;
 @import IOKit;
 
@@ -65,7 +65,7 @@ NSArray *imageStorage;
     ZKSwizzle(wb_DisplayStateMachine, DisplayStateMachine);
     ZKSwizzle(wb_KeyboardStateMachine, KeyboardStateMachine);
     
-    NSLog(@"OS X 10.%ld, %@ loaded...", (long)osx_ver, [self class]);
+    NSLog(@"%@ loaded into %@ on macOS 10.%ld", [self class], [[NSBundle mainBundle] bundleIdentifier], (long)osx_ver);
 }
 
 - (void)initializeWindow
@@ -88,8 +88,7 @@ NSArray *imageStorage;
     NSArray *whiteVolumeImages = [[NSArray alloc] initWithArray:grabImages];
     
     NSString *filePath = @"/tmp";
-    NSBundle *bundle = [NSBundle bundleWithIdentifier:@"org.w0lf.cleanHUD"];
-    NSString *bundlePath = [bundle bundlePath];
+    NSString *bundlePath = [[NSBundle bundleForClass:[self class]] bundlePath];
     
     if ([bundlePath length]) filePath = [bundlePath stringByAppendingString:@"/Contents/Resources/display_icon.png"];
     NSImage *blackScreen = [self getIMG:filePath :false];
