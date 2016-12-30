@@ -8,9 +8,7 @@
 
 // Imports & Includes
 @import AppKit;
-@import QuartzCore;
 @import CoreAudio;
-@import IOKit;
 
 #include "ZKSwizzle.h"
 #include "ISSoundAdditions.h"
@@ -31,17 +29,34 @@ cleanHUD *plugin;
 my_NSWindow *myWin;
 AYProgressIndicator *indi;
 int animateHUD;
+float mybrightness;
 NSInteger osx_ver;
 NSImageView *vol;
 NSArray *imageStorage;
 
 // Implementations
 
+typedef struct _monochromePixel{
+    unsigned char grayValue;
+    unsigned char alpha;
+} monochromePixel;
+
 @implementation my_NSWindow
 - (NSRect)constrainFrameRect:(NSRect)frameRect toScreen:(NSScreen *)screen {
     return frameRect;
 }
 @end
+
+/*
+ 
+ Options to add:
+ 
+ - hide delay
+ - fade speed
+ - custom colors
+ - no HUD at all
+ 
+ */
 
 @implementation cleanHUD
 
@@ -53,8 +68,7 @@ NSArray *imageStorage;
     return plugin;
 }
 
-+ (void)load
-{
++ (void)load {
     osx_ver = [[NSProcessInfo processInfo] operatingSystemVersion].minorVersion;
     
     plugin = [cleanHUD sharedInstance];
@@ -64,54 +78,37 @@ NSArray *imageStorage;
     ZKSwizzle(wb_VolumeStateMachine, VolumeStateMachine);
     ZKSwizzle(wb_DisplayStateMachine, DisplayStateMachine);
     ZKSwizzle(wb_KeyboardStateMachine, KeyboardStateMachine);
+    ZKSwizzle(wb_KeyboardALSAlgorithm, KeyboardALSAlgorithm);
     
-    NSLog(@"%@ loaded into %@ on macOS 10.%ld", [self class], [[NSBundle mainBundle] bundleIdentifier], (long)osx_ver);
+    NSLog(@"OS X 10.%ld, %@ loaded...", (long)osx_ver, [self class]);
 }
 
 - (void)initializeWindow
 {
     // Use some system images for the volume indicator
-    NSArray *volImgPaths = [NSArray arrayWithObjects:@"/System/Library/CoreServices/Menu Extras/Volume.menu/Contents/Resources/Volume1.pdf",
-                            @"/System/Library/CoreServices/Menu Extras/Volume.menu/Contents/Resources/Volume2.pdf",
-                            @"/System/Library/CoreServices/Menu Extras/Volume.menu/Contents/Resources/Volume3.pdf",
-                            @"/System/Library/CoreServices/Menu Extras/Volume.menu/Contents/Resources/Volume4.pdf",
-                            nil];
+    NSMutableArray *blackVolumeImages = [NSMutableArray new];
+    NSMutableArray *whiteVolumeImages = [NSMutableArray new];
     
-    NSMutableArray *grabImages = [[NSMutableArray alloc] init];
-    for (NSString *path in volImgPaths)
-        [grabImages addObject:[self getIMG:path :false]];
-    NSArray *blackVolumeImages = [[NSArray alloc] initWithArray:grabImages];
+    NSString   *bundlePath = [[NSBundle bundleForClass:[self class]] bundlePath];
+    for (int numb = 1; numb <= 4; numb++) {
+        [blackVolumeImages addObject:[[NSImage alloc] initWithContentsOfFile:[NSString stringWithFormat:@"%@/Contents/Resources/Volume%d_blk.png", bundlePath, numb]]];
+        [whiteVolumeImages addObject:[[NSImage alloc] initWithContentsOfFile:[NSString stringWithFormat:@"%@/Contents/Resources/Volume%d.png", bundlePath, numb]]];
+    }
+    NSImage   *blackScreen = [[NSImage alloc] initWithContentsOfFile:[bundlePath stringByAppendingString:@"/Contents/Resources/display_icon_blk.png"]];
+    NSImage   *whiteScreen = [[NSImage alloc] initWithContentsOfFile:[bundlePath stringByAppendingString:@"/Contents/Resources/display_icon.png"]];
+    NSImage *blackKeyboard = [[NSImage alloc] initWithContentsOfFile:[bundlePath stringByAppendingString:@"/Contents/Resources/keyboard_icon_blk.png"]];
+    NSImage *whiteKeyboard = [[NSImage alloc] initWithContentsOfFile:[bundlePath stringByAppendingString:@"/Contents/Resources/keyboard_icon.png"]];
     
-    [grabImages removeAllObjects];
-    for (NSString *path in volImgPaths)
-        [grabImages addObject:[self getIMG:path :true]];
-    NSArray *whiteVolumeImages = [[NSArray alloc] initWithArray:grabImages];
-    
-    NSString *filePath = @"/tmp";
-    NSString *bundlePath = [[NSBundle bundleForClass:[self class]] bundlePath];
-    
-    if ([bundlePath length]) filePath = [bundlePath stringByAppendingString:@"/Contents/Resources/display_icon.png"];
-    NSImage *blackScreen = [self getIMG:filePath :false];
-    
-    if ([bundlePath length]) filePath = [bundlePath stringByAppendingString:@"/Contents/Resources/display_icon.png"];
-    NSImage *whiteScreen  = [self getIMG:filePath :true];
-    
-    if ([bundlePath length]) filePath = [bundlePath stringByAppendingString:@"/Contents/Resources/keyboard_icon.png"];
-    NSImage *blackKeyboard = [self getIMG:filePath :false];
-    
-    if ([bundlePath length]) filePath = [bundlePath stringByAppendingString:@"/Contents/Resources/keyboard_icon.png"];
-    NSImage *whiteKeyboard = [self getIMG:filePath :true];
-    
-    NSArray *volumeIMG = [[NSArray alloc] initWithObjects:blackVolumeImages, whiteVolumeImages, nil];
+    NSArray *volumeIMG = [[NSArray alloc] initWithObjects:[blackVolumeImages copy], [whiteVolumeImages copy], nil];
     NSArray *screenIMG = [[NSArray alloc] initWithObjects:blackScreen, whiteScreen, nil];
     NSArray *keyboardIMG = [[NSArray alloc] initWithObjects:blackKeyboard, whiteKeyboard, nil];
-    
+
     imageStorage = [[NSArray alloc] initWithObjects:volumeIMG, screenIMG, keyboardIMG, nil];
     
     animateHUD = 0;
     
     // Set up window to float above menubar
-    myWin = [[my_NSWindow alloc] initWithContentRect:NSMakeRect([NSScreen mainScreen].frame.size.width / 2 - 117, [NSScreen mainScreen].frame.size.height - 22, 234, 22) styleMask:NSWindowStyleMaskBorderless backing:NSBackingStoreBuffered defer:NO];
+    myWin = [[my_NSWindow alloc] initWithContentRect:NSMakeRect([NSScreen mainScreen].frame.size.width / 2 - 117, [NSScreen mainScreen].frame.size.height - 22, 234, 22) styleMask:0 backing:NSBackingStoreBuffered defer:NO];
     [myWin makeKeyAndOrderFront:nil];
     [myWin setLevel:NSMainMenuWindowLevel + 2];
     [myWin setMovableByWindowBackground:YES];
@@ -119,11 +116,11 @@ NSArray *imageStorage;
     
     // Set up indicator to show volume percentage
     indi = [[AYProgressIndicator alloc] initWithFrame:NSMakeRect(30, 9, 200, 4)
-                                         progressColor:[NSColor redColor]
-                                            emptyColor:[NSColor lightGrayColor]
-                                              minValue:0
-                                              maxValue:100
-                                          currentValue:0];
+                                        progressColor:[NSColor redColor]
+                                           emptyColor:[NSColor lightGrayColor]
+                                             minValue:0
+                                             maxValue:100
+                                         currentValue:0];
     [indi setHidden:NO];
     [indi setWantsLayer:YES];
     [indi.layer setCornerRadius:2];
@@ -139,31 +136,11 @@ NSArray *imageStorage;
     [myWin setAlphaValue:0.0];
 }
 
-- (NSImage*)getIMG :(NSString*)imagePath :(BOOL)whiteColor
-{
-    NSImage *result = [[NSImage alloc] initWithContentsOfFile:imagePath];
-    
-    if (whiteColor)
-    {
-        CIImage* ciImage = [[CIImage alloc] initWithData:[result TIFFRepresentation]];
-        CIFilter* filter = [CIFilter filterWithName:@"CIColorInvert"];
-        [filter setDefaults];
-        [filter setValue:ciImage forKey:@"inputImage"];
-        CIImage *output = [filter valueForKey:@"outputImage"];
-        NSCIImageRep *rep = [NSCIImageRep imageRepWithCIImage:output];
-        NSImage *nsImage = [[NSImage alloc] initWithSize:rep.size];
-        [nsImage addRepresentation:rep];
-        result = nsImage;
-    }
-    
-    return result;
-}
-
-- (void)showHUD :(int)hudType :(double)hudValue
+- (void)showHUD :(int)hudType :(float)hudValue
 {
     // Check for Dark mode
     NSString *osxMode = [[NSUserDefaults standardUserDefaults] stringForKey:@"AppleInterfaceStyle"];
-    NSImage *displayImage;
+    NSImage *displayImage = [NSImage new];
     
     // Set progressbar
     [indi setDoubleValue:100];
@@ -233,9 +210,7 @@ NSArray *imageStorage;
             context.duration = 1;
             myWin.animator.alphaValue = 0;
         }
-        completionHandler:^{
-//            myWin.animator.alphaValue = 1;
-        }];
+        completionHandler:^{ }];
     }
     
     if (animateHUD > 0)
@@ -248,24 +223,23 @@ NSArray *imageStorage;
     outputDeviceAOPA.mSelector= kAudioHardwarePropertyDefaultOutputDevice;
     outputDeviceAOPA.mScope= kAudioObjectPropertyScopeGlobal;
     outputDeviceAOPA.mElement= kAudioObjectPropertyElementMaster;
-
+    
     AudioObjectID outputDeviceID = kAudioObjectUnknown;
     UInt32 propertySize = sizeof(AudioDeviceID);
-
+    
     AudioObjectGetPropertyData(kAudioObjectSystemObject, &outputDeviceAOPA,
                                0, nil, &propertySize, &outputDeviceID);
-
+    
     AudioObjectPropertyAddress volumeAOPA;
     volumeAOPA.mSelector= kAudioDevicePropertyMute;
     volumeAOPA.mScope= kAudioObjectPropertyScopeOutput;
     volumeAOPA.mElement= kAudioObjectPropertyElementMaster;
-
+    
     UInt32 isMuted = 0;
     UInt32 propSize = sizeof(UInt32);
-
+    
     AudioObjectGetPropertyData(outputDeviceID, &volumeAOPA, 0, nil, &propSize, &isMuted);
-
-//    NSLog(@"Muted: %u", (unsigned int)isMuted);
+    
     return (BOOL)isMuted;
 }
 
@@ -281,7 +255,7 @@ NSArray *imageStorage;
 
 - (void)displayOSD
 {
-    [plugin showHUD:0 :(double)[NSSound systemVolume] * 100];
+    [plugin showHUD:0 :[NSSound systemVolume] * 100];
 }
 
 @end
@@ -296,24 +270,12 @@ NSArray *imageStorage;
 
 - (void)displayOSD
 {
-    [plugin showHUD:1 :(double)ZKHookIvar(self, float, "_brightness") * 100];
+    [plugin showHUD:1 :ZKHookIvar(self, float, "_brightness") * 100];
 }
 
 @end
 
 @interface wb_KeyboardStateMachine : NSObject
-{
-    io_connect_t dataPort;
-}
-
-enum {
-    kGetSensorReadingID   = 0,  // getSensorReading(int *, int *)
-    kGetLEDBrightnessID   = 1,  // getLEDBrightness(int, int *)
-    kSetLEDBrightnessID   = 2,  // setLEDBrightness(int, int, int *)
-    kSetLEDFadeID         = 3,  // setLEDFade(int, int, int, int *)
-    kverifyFirmwareID     = 4,  // verifyFirmware(int *)
-    kGetFirmwareVersionID = 5,  // getFirmwareVersion(int *)
-};
 
 - (void)displayOSD;
 
@@ -321,56 +283,25 @@ enum {
 
 @implementation wb_KeyboardStateMachine
 
-- (io_connect_t)getDataPort
-{
-    if (dataPort) return dataPort;
-    
-    io_service_t serviceObject = IOServiceGetMatchingService(kIOMasterPortDefault, IOServiceMatching("AppleLMUController"));
-    
-    if (!serviceObject) return 0;
-    
-    kern_return_t kr = IOServiceOpen(serviceObject, mach_task_self(), 0, &dataPort);
-    IOObjectRelease(serviceObject);
-    
-    if (kr != KERN_SUCCESS) return 0;
-    
-    return dataPort;
-}
-
-- (float)getBrightness
-{
-    dataPort = [self getDataPort];
-    
-    if (!dataPort) return 0.0;
-    
-    uint32_t inputCount = 1;
-    uint64_t inputValues[1] = { 0 };
-    
-    uint32_t outputCount = 1;
-    uint64_t outputValues[1];
-    
-    kern_return_t kr = IOConnectCallScalarMethod(dataPort,
-                                                 kGetLEDBrightnessID,
-                                                 inputValues,
-                                                 inputCount,
-                                                 outputValues,
-                                                 &outputCount);
-    
-    float brightness = -1.0;
-    if (kr == KERN_SUCCESS) {
-        brightness = (float)outputValues[0] / 0xfff;
-    }
-    
-    return brightness;
-}
-
 - (void)displayOSD
 {
-    float bright = ceil([self getBrightness] * 100);
-    if (bright >= 0)
-        [plugin showHUD:2 :(double)bright];
-    NSLog(@"%f", ceil([self getBrightness] * 100));
-//    ZKOrig(void);
+    [plugin showHUD:2 :mybrightness * 100];
+}
+
+@end
+
+@interface wb_KeyboardALSAlgorithm : NSObject
+
+- (void)prefChanged:(id)arg1;
+
+@end
+
+@implementation wb_KeyboardALSAlgorithm
+
+- (void)prefChanged:(id)arg1
+{
+    ZKOrig(void, arg1);
+    mybrightness = ZKHookIvar(self, float, "_brightness");
 }
 
 @end
