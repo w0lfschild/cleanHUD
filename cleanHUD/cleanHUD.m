@@ -36,11 +36,6 @@ NSArray *imageStorage;
 
 // Implementations
 
-typedef struct _monochromePixel{
-    unsigned char grayValue;
-    unsigned char alpha;
-} monochromePixel;
-
 @implementation my_NSWindow
 - (NSRect)constrainFrameRect:(NSRect)frameRect toScreen:(NSScreen *)screen {
     return frameRect;
@@ -60,8 +55,7 @@ typedef struct _monochromePixel{
 
 @implementation cleanHUD
 
-+ (cleanHUD*) sharedInstance
-{
++ (cleanHUD*) sharedInstance {
     static cleanHUD* plugin = nil;
     if (plugin == nil)
         plugin = [[cleanHUD alloc] init];
@@ -78,46 +72,50 @@ typedef struct _monochromePixel{
     ZKSwizzle(wb_VolumeStateMachine, VolumeStateMachine);
     ZKSwizzle(wb_DisplayStateMachine, DisplayStateMachine);
     ZKSwizzle(wb_KeyboardStateMachine, KeyboardStateMachine);
-    ZKSwizzle(wb_KeyboardALSAlgorithm, KeyboardALSAlgorithm);
+        
+    if (NSClassFromString(@"KeyboardALSAlgorithmHID")) {
+        ZKSwizzle(wb_KeyboardALSAlgorithmHID, KeyboardALSAlgorithmHID);
+        ZKSwizzle(wb_KeyboardALSAlgorithmLegacy, KeyboardALSAlgorithmLegacy);
+    } else {
+        ZKSwizzle(wb_KeyboardALSAlgorithm, KeyboardALSAlgorithm);
+    }
     
     NSLog(@"OS X 10.%ld, %@ loaded...", (long)osx_ver, [self class]);
 }
 
-- (void)initializeWindow
-{
+- (void)initializeWindow {
     // Use some system images for the volume indicator
     NSMutableArray *blackVolumeImages = [NSMutableArray new];
     NSMutableArray *whiteVolumeImages = [NSMutableArray new];
     
-    NSString   *bundlePath = [[NSBundle bundleForClass:[self class]] bundlePath];
+    NSString *bundlePath    = [[NSBundle bundleForClass:[self class]] bundlePath];
     for (int numb = 1; numb <= 4; numb++) {
         [blackVolumeImages addObject:[[NSImage alloc] initWithContentsOfFile:[NSString stringWithFormat:@"%@/Contents/Resources/Volume%d_blk.png", bundlePath, numb]]];
         [whiteVolumeImages addObject:[[NSImage alloc] initWithContentsOfFile:[NSString stringWithFormat:@"%@/Contents/Resources/Volume%d.png", bundlePath, numb]]];
     }
-    NSImage   *blackScreen = [[NSImage alloc] initWithContentsOfFile:[bundlePath stringByAppendingString:@"/Contents/Resources/display_icon_blk.png"]];
-    NSImage   *whiteScreen = [[NSImage alloc] initWithContentsOfFile:[bundlePath stringByAppendingString:@"/Contents/Resources/display_icon.png"]];
-    NSImage *blackKeyboard = [[NSImage alloc] initWithContentsOfFile:[bundlePath stringByAppendingString:@"/Contents/Resources/keyboard_icon_blk.png"]];
-    NSImage *whiteKeyboard = [[NSImage alloc] initWithContentsOfFile:[bundlePath stringByAppendingString:@"/Contents/Resources/keyboard_icon.png"]];
-    
-    NSArray *volumeIMG = [[NSArray alloc] initWithObjects:[blackVolumeImages copy], [whiteVolumeImages copy], nil];
-    NSArray *screenIMG = [[NSArray alloc] initWithObjects:blackScreen, whiteScreen, nil];
-    NSArray *keyboardIMG = [[NSArray alloc] initWithObjects:blackKeyboard, whiteKeyboard, nil];
+    NSImage *blackScreen    = [[NSImage alloc] initWithContentsOfFile:[bundlePath stringByAppendingString:@"/Contents/Resources/display_icon_blk.png"]];
+    NSImage *whiteScreen    = [[NSImage alloc] initWithContentsOfFile:[bundlePath stringByAppendingString:@"/Contents/Resources/display_icon.png"]];
+    NSImage *blackKeyboard  = [[NSImage alloc] initWithContentsOfFile:[bundlePath stringByAppendingString:@"/Contents/Resources/keyboard_icon_blk.png"]];
+    NSImage *whiteKeyboard  = [[NSImage alloc] initWithContentsOfFile:[bundlePath stringByAppendingString:@"/Contents/Resources/keyboard_icon.png"]];
+    NSArray *volumeIMG      = [[NSArray alloc] initWithObjects:[blackVolumeImages copy], [whiteVolumeImages copy], nil];
+    NSArray *screenIMG      = [[NSArray alloc] initWithObjects:blackScreen, whiteScreen, nil];
+    NSArray *keyboardIMG    = [[NSArray alloc] initWithObjects:blackKeyboard, whiteKeyboard, nil];
 
     imageStorage = [[NSArray alloc] initWithObjects:volumeIMG, screenIMG, keyboardIMG, nil];
-    
     animateHUD = 0;
     
     // Set up window to float above menubar
     myWin = [[my_NSWindow alloc] initWithContentRect:NSMakeRect([NSScreen mainScreen].frame.size.width / 2 - 117, [NSScreen mainScreen].frame.size.height - 22, 234, 22) styleMask:0 backing:NSBackingStoreBuffered defer:NO];
     [myWin makeKeyAndOrderFront:nil];
     [myWin setLevel:NSMainMenuWindowLevel + 2];
-    [myWin setMovableByWindowBackground:YES];
+    [myWin setMovableByWindowBackground:NO];
     [myWin makeKeyAndOrderFront:nil];
+    [myWin setIgnoresMouseEvents:YES];
     
     // Set up indicator to show volume percentage
     indi = [[AYProgressIndicator alloc] initWithFrame:NSMakeRect(30, 9, 200, 4)
-                                        progressColor:[NSColor redColor]
-                                           emptyColor:[NSColor lightGrayColor]
+                                        progressColor:[NSColor whiteColor]
+                                           emptyColor:[NSColor blackColor]
                                              minValue:0
                                              maxValue:100
                                          currentValue:0];
@@ -136,10 +134,11 @@ typedef struct _monochromePixel{
     [myWin setAlphaValue:0.0];
 }
 
-- (void)showHUD :(int)hudType :(float)hudValue
-{
+- (void)showHUD :(int)hudType :(float)hudValue {
     // Check for Dark mode
+    int darkMode;
     NSString *osxMode = [[NSUserDefaults standardUserDefaults] stringForKey:@"AppleInterfaceStyle"];
+    if (osxMode == nil) darkMode = 1; else darkMode = 0;
     NSImage *displayImage = [NSImage new];
     
     // Set progressbar
@@ -147,36 +146,26 @@ typedef struct _monochromePixel{
     [indi setDoubleValue:hudValue];
     
     // Dark mode / Light mode
-    if (osxMode == nil)
-    {
+    if (darkMode == 1) {
         [myWin setBackgroundColor:[NSColor colorWithRed:0.0 green:0.0 blue:0.0 alpha:0.25]];
         [indi setProgressColor:[NSColor whiteColor]];
-    }
-    else
-    {
+    } else {
         [myWin setBackgroundColor:[NSColor colorWithWhite:1.0 alpha:0.75]];
         [indi setProgressColor:[NSColor blackColor]];
     }
     
     // Set icon
-    int darkMode;
-    if (osxMode == nil) darkMode = 1; else darkMode = 0;
-    
     NSArray *imagesArray = [imageStorage objectAtIndex:hudType];
-    if (hudType != 0)
-    {
+    if (hudType != 0) {
         displayImage = [imagesArray objectAtIndex:darkMode];
-    }
-    else
-    {
+    } else {
         NSArray *imgList = [[NSArray alloc] initWithArray:[imagesArray objectAtIndex:darkMode]];
-        if ([self getMuteState])
-        {
+        if ([self getMuteState]) {
             [indi setDoubleValue:0];
             displayImage = [imgList objectAtIndex:0];
-        }
-        else
+        } else {
             displayImage = [imgList objectAtIndex:ceil(hudValue / 33.34)];
+        }
     }
     
     [indi updateLayer];
@@ -187,6 +176,9 @@ typedef struct _monochromePixel{
     for (NSScreen *scr in [NSScreen screens])
         if (scr.frame.size.height > maxHeight) maxHeight = scr.frame.size.height;
     [myWin setFrameOrigin:CGPointMake([NSScreen mainScreen].frame.size.width / 2 - 117 + [NSScreen mainScreen].frame.origin.x, maxHeight - 22)];
+    
+    [myWin setLevel:NSMainMenuWindowLevel + 2];
+    [myWin setCollectionBehavior:NSWindowCollectionBehaviorCanJoinAllSpaces];
     
     // Hide the window in 1 second
     animateHUD ++;
@@ -201,10 +193,8 @@ typedef struct _monochromePixel{
     [NSAnimationContext endGrouping];
 }
 
-- (void)hideHUD
-{
-    if (animateHUD == 1)
-    {
+- (void)hideHUD {
+    if (animateHUD == 1) {
         // Fade out the HUD
         [NSAnimationContext runAnimationGroup:^(NSAnimationContext *context) {
             context.duration = 1;
@@ -212,13 +202,11 @@ typedef struct _monochromePixel{
         }
         completionHandler:^{ }];
     }
-    
     if (animateHUD > 0)
         animateHUD--;
 }
 
-- (BOOL)getMuteState
-{
+- (BOOL)getMuteState {
     AudioObjectPropertyAddress outputDeviceAOPA;
     outputDeviceAOPA.mSelector= kAudioHardwarePropertyDefaultOutputDevice;
     outputDeviceAOPA.mScope= kAudioObjectPropertyScopeGlobal;
@@ -245,6 +233,8 @@ typedef struct _monochromePixel{
 
 @end
 
+/* wb_VolumeStateMachine */
+
 @interface wb_VolumeStateMachine : NSObject
 
 - (void)displayOSD;
@@ -253,12 +243,13 @@ typedef struct _monochromePixel{
 
 @implementation wb_VolumeStateMachine
 
-- (void)displayOSD
-{
+- (void)displayOSD {
     [plugin showHUD:0 :[NSSound systemVolume] * 100];
 }
 
 @end
+
+/* wb_DisplayStateMachine */
 
 @interface wb_DisplayStateMachine : NSObject
 
@@ -268,12 +259,13 @@ typedef struct _monochromePixel{
 
 @implementation wb_DisplayStateMachine
 
-- (void)displayOSD
-{
+- (void)displayOSD {
     [plugin showHUD:1 :ZKHookIvar(self, float, "_brightness") * 100];
 }
 
 @end
+
+/* wb_KeyboardStateMachine */
 
 @interface wb_KeyboardStateMachine : NSObject
 
@@ -283,12 +275,13 @@ typedef struct _monochromePixel{
 
 @implementation wb_KeyboardStateMachine
 
-- (void)displayOSD
-{
+- (void)displayOSD {
     [plugin showHUD:2 :mybrightness * 100];
 }
 
 @end
+
+/* wb_KeyboardALSAlgorithm */
 
 @interface wb_KeyboardALSAlgorithm : NSObject
 
@@ -298,10 +291,65 @@ typedef struct _monochromePixel{
 
 @implementation wb_KeyboardALSAlgorithm
 
-- (void)prefChanged:(id)arg1
-{
+- (void)prefChanged:(id)arg1 {
     ZKOrig(void, arg1);
     mybrightness = ZKHookIvar(self, float, "_brightness");
+}
+
+@end
+
+/* wb_KeyboardALSAlgorithmHID */
+
+@interface wb_KeyboardALSAlgorithmHID : NSObject
+{
+    NSArray *possibleFloats;
+}
+
+- (void)setHardwareBrightness:(float)arg1 UsingFadeSpeed:(int)arg2;
+
+@end
+
+@implementation wb_KeyboardALSAlgorithmHID
+
+- (void)setHardwareBrightness:(float)arg1 UsingFadeSpeed:(int)arg2 {
+    /* Hard coded work around unless I can figure out some algorithm this follows */
+    if (possibleFloats == nil)
+        possibleFloats = @[@"0.000000",@"0.062500",@"0.073194",@"0.085717",@"0.100383",@"0.117559",@"0.137673",@"0.161228",@"0.188814",
+                           @"0.221119",@"0.258952",@"0.303259",@"0.355145",@"0.415910",@"0.487071",@"0.570408",@"0.668003"];
+    
+    BOOL hasSet = false;
+    float bright = ZKHookIvar(self, float, "_brightness");
+    NSString* numberA = [NSString stringWithFormat:@"%.6f", bright];
+    for (int i = 0; i < possibleFloats.count; i++) {
+        NSString* numberB = possibleFloats[i];
+        if ([numberA isEqualToString:numberB]) {
+            mybrightness = (float)((i * 6.25) / 100.0);
+            hasSet = true;
+            break;
+        }
+    }
+
+    if (!hasSet)
+        mybrightness = arg1 / .668;
+
+    ZKOrig(void, arg1, arg2);
+}
+
+@end
+
+/* wb_KeyboardALSAlgorithmLegacy */
+
+@interface wb_KeyboardALSAlgorithmLegacy : NSObject
+
+- (void)setHardwareBrightness:(float)arg1 UsingFadeSpeed:(int)arg2;
+
+@end
+
+@implementation wb_KeyboardALSAlgorithmLegacy
+
+- (void)setHardwareBrightness:(float)arg1 UsingFadeSpeed:(int)arg2 {
+    mybrightness = arg1;
+    ZKOrig(void, arg1, arg2);
 }
 
 @end
