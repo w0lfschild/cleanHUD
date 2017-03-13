@@ -72,12 +72,15 @@ const CFStringRef kDisplayBrightness = CFSTR(kIODisplayBrightnessKey);
     plugin = [cleanHUD sharedInstance];
     [plugin initializeWindow];
     
-    /* A basic swizzle */
+    // NSLog(@"wb_ test0 : %@", NSClassFromString(@"KeyboardALSAlgorithm"));
+    // NSLog(@"wb_ test1 : %@", NSClassFromString(@"KeyboardALSAlgorithmHID"));
+    // NSLog(@"wb_ test2 : %@", NSClassFromString(@"KeyboardALSAlgorithmLegacy"));
+    
+    /* Swizzle */
     ZKSwizzle(wb_VolumeStateMachine, VolumeStateMachine);
     ZKSwizzle(wb_DisplayStateMachine, DisplayStateMachine);
     ZKSwizzle(wb_KeyboardStateMachine, KeyboardStateMachine);
     
-    ZKSwizzle(wb_KeyboardALSAlgorithm, KeyboardALSAlgorithm);
     if (NSClassFromString(@"KeyboardALSAlgorithmHID")) {
         ZKSwizzle(wb_KeyboardALSAlgorithmHID, KeyboardALSAlgorithmHID);
         ZKSwizzle(wb_KeyboardALSAlgorithmLegacy, KeyboardALSAlgorithmLegacy);
@@ -89,7 +92,7 @@ const CFStringRef kDisplayBrightness = CFSTR(kIODisplayBrightnessKey);
     ZKSwizzle(wb_ControlStripBrightnessButton, ControlStrip.BrightnessButton);
     ZKSwizzle(wb_OSDUIHelperOSDUIHelper, OSDUIHelper.OSDUIHelper);
     
-    NSLog(@"OS X 10.%ld, %@ loaded...", (long)osx_ver, [self class]);
+    // NSLog(@"OS X 10.%ld, %@ loaded...", (long)osx_ver, [self class]);
 }
 
 - (void)initializeWindow {
@@ -316,6 +319,7 @@ const CFStringRef kDisplayBrightness = CFSTR(kIODisplayBrightnessKey);
 @implementation wb_KeyboardStateMachine
 
 - (void)displayOSD {
+    // NSLog(@"wb_ %@ : %@", self.className, NSStringFromSelector(_cmd));
     [plugin showHUD:2 :mybrightness * 100];
 }
 
@@ -332,6 +336,7 @@ const CFStringRef kDisplayBrightness = CFSTR(kIODisplayBrightnessKey);
 @implementation wb_KeyboardALSAlgorithm
 
 - (void)prefChanged:(id)arg1 {
+    // NSLog(@"wb_ %@ : %@", self.className, NSStringFromSelector(_cmd));
     ZKOrig(void, arg1);
     mybrightness = ZKHookIvar(self, float, "_brightness");
 }
@@ -352,27 +357,29 @@ const CFStringRef kDisplayBrightness = CFSTR(kIODisplayBrightnessKey);
 @implementation wb_KeyboardALSAlgorithmHID
 
 - (void)setHardwareBrightness:(float)arg1 UsingFadeSpeed:(int)arg2 {
-    ZKOrig(void, arg1, arg2);
-    
     /* Hard coded work around unless I can figure out some algorithm this follows */
-    if (possibleFloats == nil)
-        possibleFloats = @[@"0.000000",@"0.062500",@"0.073194",@"0.085717",@"0.100383",@"0.117559",@"0.137673",@"0.161228",@"0.188814",
-                           @"0.221119",@"0.258952",@"0.303259",@"0.355145",@"0.415910",@"0.487071",@"0.570408",@"0.668003"];
-    
-    BOOL hasSet = false;
-    float bright = ZKHookIvar(self, float, "_brightness");
-    NSString* numberA = [NSString stringWithFormat:@"%.6f", bright];
-    for (int i = 0; i < possibleFloats.count; i++) {
-        NSString* numberB = possibleFloats[i];
-        if ([numberA isEqualToString:numberB]) {
-            mybrightness = (float)((i * 6.25) / 100.0);
-            hasSet = true;
-            break;
-        }
-    }
 
-    if (!hasSet)
-        mybrightness = arg1 / .668;
+//    possibleFloats = @[@"0.000000",@"0.062500",@"0.073194",@"0.085717",@"0.100383",@"0.117559",@"0.137673",@"0.161228",@"0.188814",
+//                       @"0.221119",@"0.258952",@"0.303259",@"0.355145",@"0.415910",@"0.487071",@"0.570408",@"0.668003"];
+    
+//    BOOL hasSet = false;
+//    float bright = ZKHookIvar(self, float, "_brightness");
+//    NSString* numberA = [NSString stringWithFormat:@"%.6f", bright];
+//    for (int i = 0; i < possibleFloats.count; i++) {
+//        NSString* numberB = possibleFloats[i];
+//        if ([numberA isEqualToString:numberB]) {
+//            mybrightness = (float)((i * 6.25) / 100.0);
+//            hasSet = true;
+//            break;
+//        }
+//    }
+//
+//    if (!hasSet)
+//        mybrightness = arg1 / .668;
+    
+    // NSLog(@"wb_ %@ : %@", self.className, NSStringFromSelector(_cmd));
+    mybrightness = arg1 / 0.668;
+    ZKOrig(void, arg1, arg2);
 }
 
 @end
@@ -388,6 +395,7 @@ const CFStringRef kDisplayBrightness = CFSTR(kIODisplayBrightnessKey);
 @implementation wb_KeyboardALSAlgorithmLegacy
 
 - (void)setHardwareBrightness:(float)arg1 UsingFadeSpeed:(int)arg2 {
+    // NSLog(@"wb_ %@ : %@", self.className, NSStringFromSelector(_cmd));
     mybrightness = arg1;
     ZKOrig(void, arg1, arg2);
 }
@@ -450,7 +458,7 @@ const CFStringRef kDisplayBrightness = CFSTR(kIODisplayBrightnessKey);
 @implementation wb_OSDUIHelperOSDUIHelper
 
 - (void)showImage:(long long)arg1 onDisplayID:(unsigned int)arg2 priority:(unsigned int)arg3 msecUntilFade:(unsigned int)arg4 filledChiclets:(unsigned int)arg5 totalChiclets:(unsigned int)arg6 locked:(BOOL)arg7 {
-//    NSLog(@"wb_ %@", NSStringFromSelector(_cmd));
+//    // NSLog(@"wb_ %@ : %@", self.className, NSStringFromSelector(_cmd));
 //  Do Nothing
 }
 
