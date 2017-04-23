@@ -91,8 +91,8 @@ const CFStringRef kDisplayBrightness = CFSTR(kIODisplayBrightnessKey);
     ZKSwizzle(wb_ControlStripVolumeButton, ControlStrip.VolumeButton);
     ZKSwizzle(wb_ControlStripBrightnessButton, ControlStrip.BrightnessButton);
     ZKSwizzle(wb_OSDUIHelperOSDUIHelper, OSDUIHelper.OSDUIHelper);
-    
-    // NSLog(@"OS X 10.%ld, %@ loaded...", (long)osx_ver, [self class]);
+
+    NSLog(@"macOS %@, %@ loaded %@...", [[NSProcessInfo processInfo] operatingSystemVersionString], [[NSProcessInfo processInfo] processName], [self class]);
 }
 
 - (void)initializeWindow {
@@ -117,7 +117,11 @@ const CFStringRef kDisplayBrightness = CFSTR(kIODisplayBrightnessKey);
     animateHUD = 0;
     
     // Set up window to float above menubar
-    myWin = [[my_NSWindow alloc] initWithContentRect:NSMakeRect([NSScreen mainScreen].frame.size.width / 2 - 117, [NSScreen mainScreen].frame.size.height - 22, 234, 22) styleMask:0 backing:NSBackingStoreBuffered defer:NO];
+    CGRect scr = [NSScreen mainScreen].visibleFrame;
+    myWin = [[my_NSWindow alloc] initWithContentRect:NSMakeRect(scr.origin.x + (scr.size.width / 2) - 117, scr.origin.y + scr.size.height, 234, 22)
+                                           styleMask:0
+                                             backing:NSBackingStoreBuffered
+                                               defer:NO];
     [myWin makeKeyAndOrderFront:nil];
     [myWin setLevel:NSMainMenuWindowLevel + 2];
     [myWin setMovableByWindowBackground:NO];
@@ -152,7 +156,7 @@ const CFStringRef kDisplayBrightness = CFSTR(kIODisplayBrightnessKey);
     [indi setDoubleValue:hudValue];
     
     // Check for Dark mode
-    int darkMode;
+    int darkMode = 0;
     NSString *osxMode = [[NSUserDefaults standardUserDefaults] stringForKey:@"AppleInterfaceStyle"];
     if (osxMode == nil) darkMode = 1; else darkMode = 0;
     NSImage *displayImage = [NSImage new];
@@ -186,11 +190,10 @@ const CFStringRef kDisplayBrightness = CFSTR(kIODisplayBrightnessKey);
     [vol setImage:displayImage];
     
     // Position the HUD in the middle of the menubar on the active screen
-    int maxHeight = 0;
-    for (NSScreen *scr in [NSScreen screens])
-        if (scr.frame.size.height > maxHeight) maxHeight = scr.frame.size.height;
-    [myWin setFrameOrigin:CGPointMake([NSScreen mainScreen].frame.size.width / 2 - 117 + [NSScreen mainScreen].frame.origin.x, maxHeight - 22)];
-    
+    CGRect scr = [NSScreen mainScreen].visibleFrame;
+    [myWin setFrameOrigin:CGPointMake(scr.origin.x + (scr.size.width / 2) - 117, scr.origin.y + scr.size.height)];
+
+    // Set window level to be above everything
     [myWin setLevel:NSMainMenuWindowLevel + 2];
     [myWin setCollectionBehavior:NSWindowCollectionBehaviorCanJoinAllSpaces];
     
