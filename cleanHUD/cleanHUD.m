@@ -158,18 +158,18 @@ const CFStringRef kDisplayBrightness = CFSTR(kIODisplayBrightnessKey);
     // Check for Dark mode
     int darkMode = 0;
     NSString *osxMode = [[NSUserDefaults standardUserDefaults] stringForKey:@"AppleInterfaceStyle"];
-    if (osxMode == nil) darkMode = 1; else darkMode = 0;
+    if (osxMode == nil) darkMode = 0; else darkMode = 1;
     NSImage *displayImage = [NSImage new];
     
     // Dark mode / Light mode
     if (darkMode == 1) {
-        [myWin setBackgroundColor:[NSColor colorWithRed:0.0 green:0.0 blue:0.0 alpha:0.25]];
+        [myWin setBackgroundColor:[NSColor colorWithRed:0.0 green:0.0 blue:0.0 alpha:0.0]];
         [indi setProgressColor:[NSColor whiteColor]];
         [indi setEmptyColor:[NSColor blackColor]];
     } else {
-        [myWin setBackgroundColor:[NSColor colorWithWhite:1.0 alpha:0.75]];
+        [myWin setBackgroundColor:[NSColor colorWithWhite:0.0 alpha:0.0]];
         [indi setProgressColor:[NSColor blackColor]];
-        [indi setEmptyColor:[NSColor grayColor]];
+        [indi setEmptyColor:[NSColor whiteColor]];
     }
     
     // Set icon
