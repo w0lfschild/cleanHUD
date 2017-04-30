@@ -156,7 +156,7 @@ const CFStringRef kDisplayBrightness = CFSTR(kIODisplayBrightnessKey);
     [indi setDoubleValue:hudValue];
     
     // Check for Dark mode
-    int darkMode = 1;
+    int darkMode = 0;
     NSString *osxMode = [[NSUserDefaults standardUserDefaults] stringForKey:@"AppleInterfaceStyle"];
     if (osxMode == nil) darkMode = 0; else darkMode = 1;
     NSImage *displayImage = [NSImage new];
