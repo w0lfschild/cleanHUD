@@ -19,7 +19,7 @@
 
 #import "ISSoundAdditions.h"
 
-AudioDeviceID obtainDefaultOutputDevice();
+AudioDeviceID obtainDefaultOutputDevice(void);
 
 @implementation NSSound (ISSoundAdditions)
 

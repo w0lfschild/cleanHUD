@@ -29,6 +29,7 @@
 cleanHUD *plugin;
 my_NSWindow *myWin;
 AYProgressIndicator *indi;
+NSView *indiBackground;
 int animateHUD;
 float mybrightness;
 NSInteger osx_ver;
@@ -127,6 +128,7 @@ const CFStringRef kDisplayBrightness = CFSTR(kIODisplayBrightnessKey);
     [myWin setMovableByWindowBackground:NO];
     [myWin makeKeyAndOrderFront:nil];
     [myWin setIgnoresMouseEvents:YES];
+    [myWin setOpaque:false];
     
     // Set up indicator to show volume percentage
     indi = [[AYProgressIndicator alloc] initWithFrame:NSMakeRect(30, 9, 200, 4)
@@ -139,11 +141,20 @@ const CFStringRef kDisplayBrightness = CFSTR(kIODisplayBrightnessKey);
     [indi setWantsLayer:YES];
     [indi.layer setCornerRadius:2];
     
+    indiBackground = [[NSView alloc] init];
+    [indiBackground setFrame:NSMakeRect(30, 8, 200, 6)];
+    [indiBackground setHidden:NO];
+    [indiBackground setWantsLayer:YES];
+    [indiBackground.layer setCornerRadius:3];
+    [indiBackground.layer setBackgroundColor:[NSColor clearColor].CGColor];
+    [indiBackground.layer setBorderWidth:1];
+    
     // Set up imageview for showing volume indicator
     vol = [[NSImageView alloc] initWithFrame:NSMakeRect(4, 0, 22, 22)];
     
     // Add subviews to window HUD
     [myWin.contentView addSubview:vol];
+    [myWin.contentView addSubview:indiBackground];
     [myWin.contentView addSubview:indi];
     
     // Hide HUD
@@ -157,19 +168,26 @@ const CFStringRef kDisplayBrightness = CFSTR(kIODisplayBrightnessKey);
     
     // Check for Dark mode
     int darkMode = 0;
-    NSString *osxMode = [[NSUserDefaults standardUserDefaults] stringForKey:@"AppleInterfaceStyle"];
-    if (osxMode == nil) darkMode = 1; else darkMode = 0;
+//    NSString *osxMode = [[NSUserDefaults standardUserDefaults] stringForKey:@"AppleInterfaceStyle"];
+//    if ([osxMode isEqualToString:@"Dark"]) darkMode = 1; else darkMode = 0;
     NSImage *displayImage = [NSImage new];
     
+    Boolean useDark = [self useDarkColors];
+    darkMode = useDark;
+    
+//    NSLog(@"cleanHUD: Darkmode : %d", darkMode);
+    
     // Dark mode / Light mode
-    if (darkMode == 1) {
-        [myWin setBackgroundColor:[NSColor colorWithRed:0.0 green:0.0 blue:0.0 alpha:0.25]];
+    if (useDark) {
+        [myWin setBackgroundColor:[NSColor clearColor]];
         [indi setProgressColor:[NSColor whiteColor]];
-        [indi setEmptyColor:[NSColor blackColor]];
+        [indi setEmptyColor:[NSColor colorWithWhite:0.0 alpha:1.0]];
+        [indiBackground.layer setBorderColor:[NSColor whiteColor].CGColor];
     } else {
-        [myWin setBackgroundColor:[NSColor colorWithWhite:1.0 alpha:0.75]];
+        [myWin setBackgroundColor:[NSColor clearColor]];
         [indi setProgressColor:[NSColor blackColor]];
-        [indi setEmptyColor:[NSColor grayColor]];
+        [indi setEmptyColor:[NSColor colorWithWhite:1.0 alpha:1.0]];
+        [indiBackground.layer setBorderColor:[NSColor blackColor].CGColor];
     }
     
     // Set icon
@@ -191,8 +209,17 @@ const CFStringRef kDisplayBrightness = CFSTR(kIODisplayBrightnessKey);
     
     // Position the HUD in the middle of the menubar on the active screen
     CGRect scr = [NSScreen mainScreen].visibleFrame;
-    [myWin setFrameOrigin:CGPointMake(scr.origin.x + (scr.size.width / 2) - 117, scr.origin.y + scr.size.height)];
-
+    float xPos = scr.origin.x + (scr.size.width / 2) - 117;
+    float yPos = scr.origin.y + scr.size.height;
+    
+    // Adjust for fullscreen
+    if (yPos == [NSScreen mainScreen].frame.size.height || yPos == [NSScreen mainScreen].frame.size.height + [NSScreen mainScreen].frame.origin.y)
+        yPos -= 22;
+    
+    // Set origin
+    CGPoint frmLoc = CGPointMake(xPos, yPos);
+    [myWin setFrameOrigin:frmLoc];
+    
     // Set window level to be above everything
     [myWin setLevel:NSMainMenuWindowLevel + 2];
     [myWin setCollectionBehavior:NSWindowCollectionBehaviorCanJoinAllSpaces];
@@ -248,33 +275,112 @@ const CFStringRef kDisplayBrightness = CFSTR(kIODisplayBrightnessKey);
     return (BOOL)isMuted;
 }
 
-- (float)get_brightness {
-    CGDirectDisplayID display[kMaxDisplays];
-    CGDisplayCount numDisplays;
-    CGDisplayErr err;
-    err = CGGetActiveDisplayList(kMaxDisplays, display, &numDisplays);
+- (float)get_brightness
+{
+    float brightness = 1.0f;
+    io_iterator_t iterator;
+    kern_return_t result =
+    IOServiceGetMatchingServices(kIOMasterPortDefault,
+                                 IOServiceMatching("IODisplayConnect"),
+                                 &iterator);
     
-    if (err != CGDisplayNoErr)
-        printf("cannot get list of displays (error %d)\n",err);
-    for (CGDisplayCount i = 0; i < numDisplays; ++i) {
-        CGDirectDisplayID dspy = display[i];
-        CFDictionaryRef originalMode = CGDisplayCurrentMode(dspy);
-        if (originalMode == NULL)
-            continue;
-        io_service_t service = CGDisplayIOServicePort(dspy);
+    // If we were successful
+    if (result == kIOReturnSuccess)
+    {
+        io_object_t service;
         
-        float brightness;
-        err= IODisplayGetFloatParameter(service, kNilOptions, kDisplayBrightness,
-                                        &brightness);
-        if (err != kIOReturnSuccess) {
-            fprintf(stderr,
-                    "failed to get brightness of display 0x%x (error %d)",
-                    (unsigned int)dspy, err);
-            continue;
+        while ((service = IOIteratorNext(iterator)))
+        {
+            IODisplayGetFloatParameter(service,
+                                       kNilOptions,
+                                       CFSTR(kIODisplayBrightnessKey),
+                                       &brightness);
+            
+            // Let the object go
+            IOObjectRelease(service);
         }
-        return brightness;
     }
-    return -1.0;//couldn't get brightness for any display
+    
+    return brightness;
+}
+
+- (Boolean)useDarkColors {
+    Boolean result = true;
+    NSColor *backGround = [self averageColor:[self contextColors]];
+    double a = 1 - ( 0.299 * backGround.redComponent * 255 + 0.587 * backGround.greenComponent * 255 + 0.114 * backGround.blueComponent * 255)/255;
+    if (a < 0.5)
+        result = false; // bright colors - black font
+    else
+        result = true; // dark colors - white font
+    return result;
+}
+
+- (CGImageRef)contextColors {
+//    NSDate *methodStart = [NSDate date];
+    
+    CGWindowID windowID = (CGWindowID)[myWin windowNumber];
+    int multiplier = 1;
+    if ([[NSScreen mainScreen] respondsToSelector:@selector(backingScaleFactor)])
+        multiplier = [[NSScreen mainScreen] backingScaleFactor];
+    
+    NSRect mf = myWin.frame;
+    NSRect sf = [NSScreen mainScreen].frame;
+    int w = mf.size.width;
+    int h = mf.size.height;
+    
+    int y = mf.origin.y;
+    if (y >= 0)
+        y = (sf.size.height - mf.origin.y - mf.size.height - fabs(sf.origin.y));
+    else
+        y = (sf.size.height + mf.origin.y + mf.size.height + sf.origin.y);
+    
+    if (y > sf.size.height) {
+        h = y - sf.size.height;
+        y = sf.size.height - h;
+    }
+    
+    NSRect trueFrame = CGRectMake(mf.origin.x, y, w, h);
+    CGImageRef screenShot = CGWindowListCreateImage(trueFrame, kCGWindowListOptionOnScreenBelowWindow, windowID, kCGWindowImageDefault);
+//    NSBitmapImageRep *bitmapRep = [[NSBitmapImageRep alloc] initWithCGImage:screenShot];
+//    NSImage *image = [[NSImage alloc] init];
+//    [image addRepresentation:bitmapRep];
+//    bitmapRep = nil;
+    
+//    NSLog(@"cleanHUD: Screenshot : %zu, %zu", CGImageGetWidth(screenShot), CGImageGetHeight(screenShot));
+//    NSLog(@"cleanHUD: My Frame : %@", NSStringFromRect(mf));
+//    NSLog(@"cleanHUD: Screen Frame : %@", NSStringFromRect(sf));
+//    NSLog(@"cleanHUD: True Frame : %@", NSStringFromRect(trueFrame));
+    
+//    NSDate *methodFinish = [NSDate date];
+//    NSTimeInterval executionTime = [methodFinish timeIntervalSinceDate:methodStart];
+//    NSLog(@"cleanHUD: executionTime = %f", executionTime);
+    
+    return screenShot;
+}
+
+- (NSColor *)averageColor:(CGImageRef)test {
+    CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
+    unsigned char rgba[4];
+    CGContextRef context = CGBitmapContextCreate(rgba, 1, 1, 8, 4, colorSpace, kCGImageAlphaPremultipliedLast | kCGBitmapByteOrder32Big);
+    
+    CGContextDrawImage(context, CGRectMake(0, 0, 1, 1), test);
+    CGColorSpaceRelease(colorSpace);
+    CGContextRelease(context);
+    
+    if(rgba[3] > 0) {
+        CGFloat alpha = ((CGFloat)rgba[3])/255.0;
+        CGFloat multiplier = alpha/255.0;
+        return [NSColor colorWithRed:((CGFloat)rgba[0])*multiplier
+                               green:((CGFloat)rgba[1])*multiplier
+                                blue:((CGFloat)rgba[2])*multiplier
+                               alpha:alpha];
+    }
+    else {
+        return [NSColor colorWithRed:((CGFloat)rgba[0])/255.0
+                               green:((CGFloat)rgba[1])/255.0
+                                blue:((CGFloat)rgba[2])/255.0
+                               alpha:((CGFloat)rgba[3])/255.0];
+    }
 }
 
 @end
