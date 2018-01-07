@@ -4,7 +4,7 @@
 
 # Information:
 
-- Designed for 10.9+   
+- Designed for 10.10+   
 - cleanHUD is a mySIMBL plugin that gives you a minimal volume HUD in macOS   
 - Author: [w0lfschild](https://github.com/w0lfschild)
 

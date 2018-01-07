@@ -30,6 +30,7 @@ cleanHUD *plugin;
 my_NSWindow *myWin;
 AYProgressIndicator *indi;
 NSView *indiBackground;
+NSVisualEffectView *indiBlur;
 int animateHUD;
 float mybrightness;
 NSInteger osx_ver;
@@ -43,17 +44,6 @@ NSArray *imageStorage;
     return frameRect;
 }
 @end
-
-/*
- 
- Options to add:
- 
- - hide delay
- - fade speed
- - custom colors
- - no HUD at all
- 
- */
 
 @implementation cleanHUD
 
@@ -123,17 +113,19 @@ const CFStringRef kDisplayBrightness = CFSTR(kIODisplayBrightnessKey);
                                            styleMask:0
                                              backing:NSBackingStoreBuffered
                                                defer:NO];
+    
     [myWin makeKeyAndOrderFront:nil];
     [myWin setLevel:NSMainMenuWindowLevel + 2];
     [myWin setMovableByWindowBackground:NO];
     [myWin makeKeyAndOrderFront:nil];
     [myWin setIgnoresMouseEvents:YES];
     [myWin setOpaque:false];
+    [myWin setBackgroundColor:[NSColor clearColor]];
     
     // Set up indicator to show volume percentage
     indi = [[AYProgressIndicator alloc] initWithFrame:NSMakeRect(30, 9, 200, 4)
                                         progressColor:[NSColor whiteColor]
-                                           emptyColor:[NSColor grayColor]
+                                           emptyColor:[NSColor clearColor]
                                              minValue:0
                                              maxValue:100
                                          currentValue:0];
@@ -141,21 +133,35 @@ const CFStringRef kDisplayBrightness = CFSTR(kIODisplayBrightnessKey);
     [indi setWantsLayer:YES];
     [indi.layer setCornerRadius:2];
     
+    // Set up indicator border
     indiBackground = [[NSView alloc] init];
-    [indiBackground setFrame:NSMakeRect(30, 8, 200, 6)];
+    [indiBackground setFrame:NSMakeRect(29, 8, 202, 6)];
     [indiBackground setHidden:NO];
     [indiBackground setWantsLayer:YES];
     [indiBackground.layer setCornerRadius:3];
     [indiBackground.layer setBackgroundColor:[NSColor clearColor].CGColor];
+    [indiBackground.layer setBorderColor:[NSColor whiteColor].CGColor];
     [indiBackground.layer setBorderWidth:1];
+    
+    // Set up indicator background blur
+    indiBlur = [[NSVisualEffectView alloc] initWithFrame:[myWin.contentView bounds]];
+    [indiBlur setAutoresizingMask:NSViewWidthSizable|NSViewHeightSizable];
+    [indiBlur setBlendingMode:NSVisualEffectBlendingModeBehindWindow];
+    [indiBlur setMaterial:NSVisualEffectMaterialDark];
+    [indiBlur setState:NSVisualEffectStateActive];
     
     // Set up imageview for showing volume indicator
     vol = [[NSImageView alloc] initWithFrame:NSMakeRect(4, 0, 22, 22)];
     
     // Add subviews to window HUD
+    [myWin.contentView setWantsLayer:true];
+    [myWin.contentView addSubview:indiBlur];
     [myWin.contentView addSubview:vol];
     [myWin.contentView addSubview:indiBackground];
     [myWin.contentView addSubview:indi];
+    
+    // Round conrners
+    [myWin.contentView.layer setCornerRadius:4];
     
     // Hide HUD
     [myWin setAlphaValue:0.0];
@@ -179,15 +185,16 @@ const CFStringRef kDisplayBrightness = CFSTR(kIODisplayBrightnessKey);
     
     // Dark mode / Light mode
     if (useDark) {
-        [myWin setBackgroundColor:[NSColor clearColor]];
         [indi setProgressColor:[NSColor whiteColor]];
-        [indi setEmptyColor:[NSColor colorWithWhite:0.0 alpha:1.0]];
         [indiBackground.layer setBorderColor:[NSColor whiteColor].CGColor];
+        [indiBlur setMaterial:NSVisualEffectMaterialDark];
     } else {
-        [myWin setBackgroundColor:[NSColor clearColor]];
         [indi setProgressColor:[NSColor blackColor]];
-        [indi setEmptyColor:[NSColor colorWithWhite:1.0 alpha:1.0]];
         [indiBackground.layer setBorderColor:[NSColor blackColor].CGColor];
+        if (osx_ver > 10)
+            [indiBlur setMaterial:NSVisualEffectMaterialSelection];
+        else
+            [indiBlur setMaterial:NSVisualEffectMaterialLight];
     }
     
     // Set icon
@@ -306,7 +313,9 @@ const CFStringRef kDisplayBrightness = CFSTR(kIODisplayBrightnessKey);
 
 - (Boolean)useDarkColors {
     Boolean result = true;
-    NSColor *backGround = [self averageColor:[self contextColors]];
+    CGImageRef screenGrab = [self contextColors];
+    NSColor *backGround = [self averageColor:screenGrab];
+    CFRelease(screenGrab);
     double a = 1 - ( 0.299 * backGround.redComponent * 255 + 0.587 * backGround.greenComponent * 255 + 0.114 * backGround.blueComponent * 255)/255;
     if (a < 0.5)
         result = false; // bright colors - black font
@@ -316,9 +325,6 @@ const CFStringRef kDisplayBrightness = CFSTR(kIODisplayBrightnessKey);
 }
 
 - (CGImageRef)contextColors {
-//    NSDate *methodStart = [NSDate date];
-    
-    CGWindowID windowID = (CGWindowID)[myWin windowNumber];
     int multiplier = 1;
     if ([[NSScreen mainScreen] respondsToSelector:@selector(backingScaleFactor)])
         multiplier = [[NSScreen mainScreen] backingScaleFactor];
@@ -339,21 +345,34 @@ const CFStringRef kDisplayBrightness = CFSTR(kIODisplayBrightnessKey);
         y = sf.size.height - h;
     }
     
+//    NSRect trueFrame = CGRectMake(mf.origin.x, y, w, h);
+//    CGImageRef screenShot = CGWindowListCreateImage(trueFrame, kCGWindowListOptionOnScreenBelowWindow, windowID, kCGWindowImageDefault);
+    
     NSRect trueFrame = CGRectMake(mf.origin.x, y, w, h);
-    CGImageRef screenShot = CGWindowListCreateImage(trueFrame, kCGWindowListOptionOnScreenBelowWindow, windowID, kCGWindowImageDefault);
-//    NSBitmapImageRep *bitmapRep = [[NSBitmapImageRep alloc] initWithCGImage:screenShot];
-//    NSImage *image = [[NSImage alloc] init];
-//    [image addRepresentation:bitmapRep];
-//    bitmapRep = nil;
+    NSArray *blockedWindows = @[@"OSDUIHelper", @"Control Strip", @"loginwindow"];
+    NSMutableArray *blockedIDs = [[NSMutableArray alloc] init];
+    [blockedIDs addObject:[NSString stringWithFormat:@"%ld", (long)[myWin windowNumber]]];
     
-//    NSLog(@"cleanHUD: Screenshot : %zu, %zu", CGImageGetWidth(screenShot), CGImageGetHeight(screenShot));
-//    NSLog(@"cleanHUD: My Frame : %@", NSStringFromRect(mf));
-//    NSLog(@"cleanHUD: Screen Frame : %@", NSStringFromRect(sf));
-//    NSLog(@"cleanHUD: True Frame : %@", NSStringFromRect(trueFrame));
+    CFArrayRef windowList = CGWindowListCopyWindowInfo(kCGWindowListOptionOnScreenOnly, kCGNullWindowID);
+    for (long i = CFArrayGetCount(windowList) - 1; i >= 0; i--) {
+        CFDictionaryRef windowinfo = (CFDictionaryRef)(uintptr_t)CFArrayGetValueAtIndex(windowList, i);
+        CFStringRef owner = CFDictionaryGetValue(windowinfo, (id)kCGWindowOwnerName);
+        if ([blockedWindows containsObject:[NSString stringWithFormat:@"%@", owner]])
+            [blockedIDs addObject:[NSString stringWithFormat:@"%@", CFDictionaryGetValue(windowinfo, (id)kCGWindowNumber)]];
+    }
     
-//    NSDate *methodFinish = [NSDate date];
-//    NSTimeInterval executionTime = [methodFinish timeIntervalSinceDate:methodStart];
-//    NSLog(@"cleanHUD: executionTime = %f", executionTime);
+    CFArrayRef onScreenWindows = CGWindowListCreate(kCGWindowListOptionOnScreenOnly, kCGNullWindowID);
+    CFMutableArrayRef finalList = CFArrayCreateMutableCopy(NULL, 0, onScreenWindows);
+    for (long i = CFArrayGetCount(finalList) - 1; i >= 0; i--) {
+        CGWindowID window = (CGWindowID)(uintptr_t)CFArrayGetValueAtIndex(finalList, i);
+        if ([blockedIDs containsObject:[NSString stringWithFormat:@"%u", window]])
+            CFArrayRemoveValueAtIndex(finalList, i);
+    }
+    
+    CGImageRef screenShot = CGWindowListCreateImageFromArray(trueFrame, finalList, kCGWindowImageDefault);
+    CFRelease(windowList);
+    CFRelease(onScreenWindows);
+    CFRelease(finalList);
     
     return screenShot;
 }
