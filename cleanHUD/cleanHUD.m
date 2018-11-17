@@ -28,9 +28,11 @@
 
 cleanHUD *plugin;
 my_NSWindow *myWin;
+NSView *myView;
 AYProgressIndicator *indi;
 NSView *indiBackground;
 NSVisualEffectView *indiBlur;
+int isControlStripDrawing;
 int animateHUD;
 float mybrightness;
 NSInteger osx_ver;
@@ -61,26 +63,44 @@ const CFStringRef kDisplayBrightness = CFSTR(kIODisplayBrightnessKey);
     osx_ver = [[NSProcessInfo processInfo] operatingSystemVersion].minorVersion;
     
     plugin = [cleanHUD sharedInstance];
+    
     [plugin initializeWindow];
+    
+    if (![NSBundle.mainBundle.bundleIdentifier isEqualToString:@"com.apple.OSDUIHelper"]) {
+        [[NSDistributedNotificationCenter defaultCenter] addObserverForName:@"com.w0lf.cleanHUDUpdate"
+                                                                     object:nil
+                                                                      queue:nil
+                                                                 usingBlock:^(NSNotification *notification) {
+                                                                     if (isControlStripDrawing == 0) {
+                                                                         NSArray *chunks = [notification.object componentsSeparatedByString: @":"];
+                                                                         int type = [chunks[0] intValue];
+                                                                         float num = [chunks[1] floatValue];
+                                                                         [[cleanHUD sharedInstance] showHUD:type :num];
+                                                                     }
+        }];
+    }
     
     // NSLog(@"wb_ test0 : %@", NSClassFromString(@"KeyboardALSAlgorithm"));
     // NSLog(@"wb_ test1 : %@", NSClassFromString(@"KeyboardALSAlgorithmHID"));
     // NSLog(@"wb_ test2 : %@", NSClassFromString(@"KeyboardALSAlgorithmLegacy"));
     
     /* Swizzle */
-    ZKSwizzle(wb_VolumeStateMachine, VolumeStateMachine);
-    ZKSwizzle(wb_DisplayStateMachine, DisplayStateMachine);
-    ZKSwizzle(wb_KeyboardStateMachine, KeyboardStateMachine);
-    
-    if (NSClassFromString(@"KeyboardALSAlgorithmHID")) {
-        ZKSwizzle(wb_KeyboardALSAlgorithmHID, KeyboardALSAlgorithmHID);
-        ZKSwizzle(wb_KeyboardALSAlgorithmLegacy, KeyboardALSAlgorithmLegacy);
-    } else {
-        ZKSwizzle(wb_KeyboardALSAlgorithm, KeyboardALSAlgorithm);
-    }
+//    ZKSwizzle(wb_VolumeStateMachine, VolumeStateMachine);
+//    ZKSwizzle(wb_DisplayStateMachine, DisplayStateMachine);
+//    ZKSwizzle(wb_KeyboardStateMachine, KeyboardStateMachine);
+//
+//    if (NSClassFromString(@"KeyboardALSAlgorithmHID")) {
+//        ZKSwizzle(wb_KeyboardALSAlgorithmHID, KeyboardALSAlgorithmHID);
+//        ZKSwizzle(wb_KeyboardALSAlgorithmLegacy, KeyboardALSAlgorithmLegacy);
+//    } else {
+//        ZKSwizzle(wb_KeyboardALSAlgorithm, KeyboardALSAlgorithm);
+//    }
+//
     
     ZKSwizzle(wb_ControlStripVolumeButton, ControlStrip.VolumeButton);
     ZKSwizzle(wb_ControlStripBrightnessButton, ControlStrip.BrightnessButton);
+    
+    ZKSwizzle(wb_OSDRoundWindow, OSDUIHelper.OSDRoundWindow);
     ZKSwizzle(wb_OSDUIHelperOSDUIHelper, OSDUIHelper.OSDUIHelper);
 
     NSLog(@"macOS %@, %@ loaded %@...", [[NSProcessInfo processInfo] operatingSystemVersionString], [[NSProcessInfo processInfo] processName], [self class]);
@@ -106,6 +126,7 @@ const CFStringRef kDisplayBrightness = CFSTR(kIODisplayBrightnessKey);
 
     imageStorage = [[NSArray alloc] initWithObjects:volumeIMG, screenIMG, keyboardIMG, nil];
     animateHUD = 0;
+    isControlStripDrawing = 0;
     
     // Set up window to float above menubar
     CGRect scr = [NSScreen mainScreen].visibleFrame;
@@ -116,6 +137,7 @@ const CFStringRef kDisplayBrightness = CFSTR(kIODisplayBrightnessKey);
     
     [myWin makeKeyAndOrderFront:nil];
     [myWin setLevel:NSMainMenuWindowLevel + 2];
+//    [myWin setLevel:NSMainMenuWindowLevel + 99999];
     [myWin setMovableByWindowBackground:NO];
     [myWin makeKeyAndOrderFront:nil];
     [myWin setIgnoresMouseEvents:YES];
@@ -123,7 +145,9 @@ const CFStringRef kDisplayBrightness = CFSTR(kIODisplayBrightnessKey);
     [myWin setBackgroundColor:[NSColor clearColor]];
     
     // Set up indicator to show volume percentage
-    indi = [[AYProgressIndicator alloc] initWithFrame:NSMakeRect(30, 9, 200, 4)
+    NSRect indiFrame = NSMakeRect(30, 8, 200, 4);
+    if (osx_ver > 13) indiFrame = NSMakeRect(28, 9, 204, 4);
+    indi = [[AYProgressIndicator alloc] initWithFrame:indiFrame
                                         progressColor:[NSColor whiteColor]
                                            emptyColor:[NSColor clearColor]
                                              minValue:0
@@ -165,6 +189,9 @@ const CFStringRef kDisplayBrightness = CFSTR(kIODisplayBrightnessKey);
     
     // Hide HUD
     [myWin setAlphaValue:0.0];
+    
+    // Init myView
+    myView = [[NSView alloc] initWithFrame:myWin.frame];
 }
 
 - (void)showHUD :(int)hudType :(float)hudValue {
@@ -245,7 +272,7 @@ const CFStringRef kDisplayBrightness = CFSTR(kIODisplayBrightnessKey);
 }
 
 - (void)hideHUD {
-    if (animateHUD == 1) {
+    if (animateHUD <= 1) {
         // Fade out the HUD
         [NSAnimationContext runAnimationGroup:^(NSAnimationContext *context) {
             context.duration = 1;
@@ -255,6 +282,8 @@ const CFStringRef kDisplayBrightness = CFSTR(kIODisplayBrightnessKey);
     }
     if (animateHUD > 0)
         animateHUD--;
+    if (isControlStripDrawing > 0)
+        isControlStripDrawing--;
 }
 
 - (BOOL)getMuteState {
@@ -292,12 +321,10 @@ const CFStringRef kDisplayBrightness = CFSTR(kIODisplayBrightnessKey);
                                  &iterator);
     
     // If we were successful
-    if (result == kIOReturnSuccess)
-    {
+    if (result == kIOReturnSuccess) {
         io_object_t service;
         
-        while ((service = IOIteratorNext(iterator)))
-        {
+        while ((service = IOIteratorNext(iterator))) {
             IODisplayGetFloatParameter(service,
                                        kNilOptions,
                                        CFSTR(kIODisplayBrightnessKey),
@@ -541,6 +568,7 @@ const CFStringRef kDisplayBrightness = CFSTR(kIODisplayBrightnessKey);
 @implementation wb_ControlStripBrightnessButton
 
 - (void)brightnessDidChange:(id)arg1 {
+    isControlStripDrawing++;
     float screenBright = [plugin get_brightness] * 100;
     if (screenBright > 96.00)
         screenBright = 100.00;
@@ -561,8 +589,90 @@ const CFStringRef kDisplayBrightness = CFSTR(kIODisplayBrightnessKey);
 @implementation wb_ControlStripVolumeButton
 
 - (void)audioDidChange:(id)arg1 {
+    isControlStripDrawing++;
     [plugin showHUD:0 :[NSSound systemVolume] * 100];
     ZKOrig(void, arg1);
+}
+
+@end
+
+/* wb_OSDUIHelper.OSDRoundWindow */
+
+@interface wb_OSDRoundWindow : NSWindow
+- (void)hackWindow:(int)hudType :(float)hudValue;
+@end
+
+@implementation wb_OSDRoundWindow
+
+- (void)hackWindow:(int)hudType :(float)hudValue {
+    // Set our location
+    [self setFrame:myWin.frame display:true];
+
+    // Update progress indicator value
+    [indi setDoubleValue:100];
+    [indi setDoubleValue:hudValue];
+
+    // Check for Dark mode
+    int darkMode = 0;
+    NSImageView *dankness = [[NSImageView alloc] initWithFrame:NSMakeRect(4, 0, 22, 22)];;
+    NSImage *displayImage = [NSImage new];
+    Boolean useDark = [plugin useDarkColors];
+    darkMode = useDark;
+
+    // Dark mode / Light mode
+    if (useDark) {
+        [indi setProgressColor:[NSColor whiteColor]];
+        [indiBackground.layer setBorderColor:[NSColor whiteColor].CGColor];
+        [indiBlur setMaterial:NSVisualEffectMaterialDark];
+    } else {
+        [indi setProgressColor:[NSColor blackColor]];
+        [indiBackground.layer setBorderColor:[NSColor blackColor].CGColor];
+        if (osx_ver > 10)
+            [indiBlur setMaterial:NSVisualEffectMaterialSelection];
+        else
+            [indiBlur setMaterial:NSVisualEffectMaterialLight];
+    }
+
+    // Set icon
+    NSArray *imagesArray = [imageStorage objectAtIndex:hudType];
+    if (hudType != 0) {
+        displayImage = [imagesArray objectAtIndex:darkMode];
+    } else {
+        imagesArray = [imagesArray objectAtIndex:darkMode];
+        if (hudValue == 0) {
+            displayImage = [imagesArray objectAtIndex:0];
+        } else {
+            displayImage = [imagesArray objectAtIndex:ceil(hudValue / 33.34)];
+        }
+    }
+
+    // Update layers
+    [indi updateLayer];
+    [dankness setImage:displayImage];
+
+    // Round conrners
+    [self.contentView.layer setCornerRadius:4];
+    
+    // Set up indicator to show volume percentage
+    NSView *aView = [[NSView alloc] initWithFrame:NSMakeRect(0, 0, 234, 22)];
+
+    // Add subviews to window HUD
+    [aView setSubviews:@[indiBlur, dankness, indiBackground, indi]];
+    [self setContentView:aView];
+    [aView setNeedsDisplay:true];
+    
+    // Position the HUD in the middle of the menubar on the active screen
+    CGRect scr = [NSScreen mainScreen].visibleFrame;
+    float xPos = scr.origin.x + (scr.size.width / 2) - 117;
+    float yPos = scr.origin.y + scr.size.height;
+    
+    // Adjust for fullscreen
+    if (yPos == [NSScreen mainScreen].frame.size.height || yPos == [NSScreen mainScreen].frame.size.height + [NSScreen mainScreen].frame.origin.y)
+        yPos -= 22;
+    
+    // Set origin
+    CGPoint frmLoc = CGPointMake(xPos, yPos);
+    [self setFrameOrigin:frmLoc];
 }
 
 @end
@@ -586,8 +696,45 @@ const CFStringRef kDisplayBrightness = CFSTR(kIODisplayBrightnessKey);
 @implementation wb_OSDUIHelperOSDUIHelper
 
 - (void)showImage:(long long)arg1 onDisplayID:(unsigned int)arg2 priority:(unsigned int)arg3 msecUntilFade:(unsigned int)arg4 filledChiclets:(unsigned int)arg5 totalChiclets:(unsigned int)arg6 locked:(BOOL)arg7 {
-//    // NSLog(@"wb_ %@ : %@", self.className, NSStringFromSelector(_cmd));
-//  Do Nothing
+//    NSLog(@"Testing : wb_ %@ : %@", self.className, NSStringFromSelector(_cmd));
+    
+    // If we're drawing our own window do nothing
+    if (myWin.alphaValue == 0) {
+        // Brightness 1
+        // Birghtness slider 7
+        
+        // Keyboard 25
+        // Keyboard 26
+        // Keyboard 27
+        
+        // Volume 23
+        // Mute 4 / Unmute 5
+        // Volume slider 3
+        
+        // HUDS
+        // 0 - Volume
+        // 1 - Screen Brightness
+        // 2 - Keyboard Brightness
+        
+        int HUDType = 0;
+        float a = arg5;
+        float b = arg6;
+        float percentageFull = (a / b) * 100.0;
+        
+        if (arg1 == 1 || arg1 == 7) {
+            HUDType = 1;
+        }
+        
+        if (arg1 == 25 || arg1 == 26 || arg1 == 27) {
+            HUDType = 2;
+        }
+        
+//        ZKOrig(void, arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+        [[NSDistributedNotificationCenter defaultCenter] postNotificationName:@"com.w0lf.cleanHUDUpdate" object:[NSString stringWithFormat:@"%d:%f", HUDType, percentageFull]];
+//        wb_OSDRoundWindow *p = (wb_OSDRoundWindow*)[NSApp windows].firstObject;
+//        NSLog(@"xyz %@", NSApp.windows);
+//        [p hackWindow:HUDType :percentageFull];
+    }
 }
 
 @end
