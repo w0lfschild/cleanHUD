@@ -159,7 +159,7 @@ const CFStringRef kDisplayBrightness = CFSTR(kIODisplayBrightnessKey);
     
     // Set up indicator border
     indiBackground = [[NSView alloc] init];
-    [indiBackground setFrame:NSMakeRect(29, 8, 202, 6)];
+    [indiBackground setFrame:NSMakeRect(28, 8, 204, 6)];
     [indiBackground setHidden:NO];
     [indiBackground setWantsLayer:YES];
     [indiBackground.layer setCornerRadius:3];
@@ -244,7 +244,7 @@ const CFStringRef kDisplayBrightness = CFSTR(kIODisplayBrightnessKey);
     // Position the HUD in the middle of the menubar on the active screen
     CGRect scr = [NSScreen mainScreen].visibleFrame;
     float xPos = scr.origin.x + (scr.size.width / 2) - 117;
-    float yPos = scr.origin.y + scr.size.height;
+    float yPos = scr.origin.y + scr.size.height + 1;
     
     // Adjust for fullscreen
     if (yPos == [NSScreen mainScreen].frame.size.height || yPos == [NSScreen mainScreen].frame.size.height + [NSScreen mainScreen].frame.origin.y)

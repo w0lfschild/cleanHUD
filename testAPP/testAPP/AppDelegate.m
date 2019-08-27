@@ -268,7 +268,7 @@ NSArray *imageStorage;
     [myWin setBackgroundColor:[NSColor clearColor]];
     
     // Set up indicator to show volume percentage
-    indi = [[AYProgressIndicator alloc] initWithFrame:NSMakeRect(30, 9, 200, 4)
+    indi = [[AYProgressIndicator alloc] initWithFrame:NSMakeRect(28, 9, 204, 4)
                                         progressColor:[NSColor whiteColor]
                                            emptyColor:[NSColor clearColor]
                                              minValue:0
@@ -358,7 +358,7 @@ NSArray *imageStorage;
     // Position the HUD in the middle of the menubar on the active screen
     CGRect scr = [NSScreen mainScreen].visibleFrame;
     float xPos = scr.origin.x + (scr.size.width / 2) - 117;
-    float yPos = scr.origin.y + scr.size.height;
+    float yPos = scr.origin.y + scr.size.height + 1;
     
     // Adjust for fullscreen
     if (yPos == [NSScreen mainScreen].frame.size.height || yPos == [NSScreen mainScreen].frame.size.height + [NSScreen mainScreen].frame.origin.y)
@@ -374,7 +374,7 @@ NSArray *imageStorage;
     
     // Hide the window in 1 second
     animateHUD ++;
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 1.0 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 5.0 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
         [self hideHUD];
     });
     
