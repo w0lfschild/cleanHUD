@@ -6,6 +6,12 @@
 //  Copyright © 2016 Wolfgang Baird. All rights reserved.
 //
 
+#ifdef DEBUG
+#   define DLog(fmt, ...) NSLog((@"%s [Line %d] " fmt), __PRETTY_FUNCTION__, __LINE__, ##__VA_ARGS__);
+#else
+#   define DLog(...)
+#endif
+
 // Imports & Includes
 @import AppKit;
 @import CoreAudio;
@@ -66,7 +72,9 @@ const CFStringRef kDisplayBrightness = CFSTR(kIODisplayBrightnessKey);
     
     [plugin initializeWindow];
     
-    if (![NSBundle.mainBundle.bundleIdentifier isEqualToString:@"com.apple.OSDUIHelper"]) {
+//    if (![NSBundle.mainBundle.bundleIdentifier isEqualToString:@"com.apple.OSDUIHelper"]) {
+    
+    if ([NSBundle.mainBundle.bundleIdentifier isEqualToString:@"com.apple.systemuiserver"]) {
         [[NSDistributedNotificationCenter defaultCenter] addObserverForName:@"com.w0lf.cleanHUDUpdate"
                                                                      object:nil
                                                                       queue:nil
@@ -255,7 +263,8 @@ const CFStringRef kDisplayBrightness = CFSTR(kIODisplayBrightnessKey);
     [myWin setFrameOrigin:frmLoc];
     
     // Set window level to be above everything
-    [myWin setLevel:NSMainMenuWindowLevel + 2];
+//    [myWin setLevel:NSMainMenuWindowLevel + 2];
+    [myWin setLevel:NSMainMenuWindowLevel + 999];
     [myWin setCollectionBehavior:NSWindowCollectionBehaviorCanJoinAllSpaces];
     
     // Hide the window in 1 second
