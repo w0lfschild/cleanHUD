@@ -74,7 +74,9 @@ const CFStringRef kDisplayBrightness = CFSTR(kIODisplayBrightnessKey);
     
 //    if (![NSBundle.mainBundle.bundleIdentifier isEqualToString:@"com.apple.OSDUIHelper"]) {
     
-    if ([NSBundle.mainBundle.bundleIdentifier isEqualToString:@"com.apple.systemuiserver"]) {
+//    if ([NSBundle.mainBundle.bundleIdentifier isEqualToString:@"com.apple.systemuiserver"]) {
+//    if ([NSBundle.mainBundle.bundleIdentifier isEqualToString:@"com.apple.coreservices.uiagent"]) {
+    if ([NSBundle.mainBundle.bundleIdentifier isEqualToString:@"com.apple.notificationcenterui"]) {
         [[NSDistributedNotificationCenter defaultCenter] addObserverForName:@"com.w0lf.cleanHUDUpdate"
                                                                      object:nil
                                                                       queue:nil
