@@ -361,7 +361,14 @@ NSArray *imageStorage;
     float yPos = scr.origin.y + scr.size.height + 1;
     
     // Adjust for fullscreen
-    if (yPos == [NSScreen mainScreen].frame.size.height || yPos == [NSScreen mainScreen].frame.size.height + [NSScreen mainScreen].frame.origin.y)
+    if ([NSApp presentationOptions] == NSApplicationPresentationAutoHideMenuBar ||
+        [NSApp presentationOptions] == NSApplicationPresentationHideMenuBar) {
+        if (NSEvent.mouseLocation.y < scr.size.height - 22)
+            yPos -= 22;
+    }
+        
+    // Adjust for fullscreen
+    if (yPos == scr.size.height || yPos == scr.size.height + scr.origin.y)
         yPos -= 22;
     
     // Set origin

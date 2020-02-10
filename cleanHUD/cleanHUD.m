@@ -73,9 +73,9 @@ const CFStringRef kDisplayBrightness = CFSTR(kIODisplayBrightnessKey);
     [plugin initializeWindow];
     
 //    if (![NSBundle.mainBundle.bundleIdentifier isEqualToString:@"com.apple.OSDUIHelper"]) {
-    
 //    if ([NSBundle.mainBundle.bundleIdentifier isEqualToString:@"com.apple.systemuiserver"]) {
 //    if ([NSBundle.mainBundle.bundleIdentifier isEqualToString:@"com.apple.coreservices.uiagent"]) {
+//    [NSBundle.mainBundle.bundleIdentifier isEqualToString:@"com.apple.notificationcenterui"]
     if ([NSBundle.mainBundle.bundleIdentifier isEqualToString:@"com.apple.notificationcenterui"]) {
         [[NSDistributedNotificationCenter defaultCenter] addObserverForName:@"com.w0lf.cleanHUDUpdate"
                                                                      object:nil
@@ -256,8 +256,15 @@ const CFStringRef kDisplayBrightness = CFSTR(kIODisplayBrightnessKey);
     float xPos = scr.origin.x + (scr.size.width / 2) - 117;
     float yPos = scr.origin.y + scr.size.height + 1;
     
+    // Menubar hidden check
+     if ([NSApp presentationOptions] == NSApplicationPresentationAutoHideMenuBar ||
+         [NSApp presentationOptions] == NSApplicationPresentationHideMenuBar) {
+         if (NSEvent.mouseLocation.y < scr.size.height - 22)
+             yPos -= 22;
+     }
+    
     // Adjust for fullscreen
-    if (yPos == [NSScreen mainScreen].frame.size.height || yPos == [NSScreen mainScreen].frame.size.height + [NSScreen mainScreen].frame.origin.y)
+    if (yPos == scr.size.height || yPos == scr.size.height + scr.origin.y)
         yPos -= 22;
     
     // Set origin
@@ -741,7 +748,8 @@ const CFStringRef kDisplayBrightness = CFSTR(kIODisplayBrightnessKey);
         }
         
 //        ZKOrig(void, arg1, arg2, arg3, arg4, arg5, arg6, arg7);
-        [[NSDistributedNotificationCenter defaultCenter] postNotificationName:@"com.w0lf.cleanHUDUpdate" object:[NSString stringWithFormat:@"%d:%f", HUDType, percentageFull]];
+        [[NSDistributedNotificationCenter defaultCenter] postNotificationName:@"com.w0lf.cleanHUDUpdate" object:[NSString stringWithFormat:@"%d:%f", HUDType, percentageFull] userInfo:nil deliverImmediately:true];
+//        [[NSDistributedNotificationCenter defaultCenter] postNotificationName:@"com.w0lf.cleanHUDUpdate" object:[NSString stringWithFormat:@"%d:%f", HUDType, percentageFull]];
 //        wb_OSDRoundWindow *p = (wb_OSDRoundWindow*)[NSApp windows].firstObject;
 //        NSLog(@"xyz %@", NSApp.windows);
 //        [p hackWindow:HUDType :percentageFull];
