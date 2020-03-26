@@ -44,6 +44,7 @@ float mybrightness;
 NSInteger osx_ver;
 NSImageView *vol;
 NSArray *imageStorage;
+Boolean iOSStyle;
 
 // Implementations
 
@@ -67,16 +68,23 @@ const CFStringRef kDisplayBrightness = CFSTR(kIODisplayBrightnessKey);
 
 + (void)load {
     osx_ver = [[NSProcessInfo processInfo] operatingSystemVersion].minorVersion;
-    
     plugin = [cleanHUD sharedInstance];
-    
     [plugin initializeWindow];
     
 //    if (![NSBundle.mainBundle.bundleIdentifier isEqualToString:@"com.apple.OSDUIHelper"]) {
 //    if ([NSBundle.mainBundle.bundleIdentifier isEqualToString:@"com.apple.systemuiserver"]) {
 //    if ([NSBundle.mainBundle.bundleIdentifier isEqualToString:@"com.apple.coreservices.uiagent"]) {
-//    [NSBundle.mainBundle.bundleIdentifier isEqualToString:@"com.apple.notificationcenterui"]
-    if ([NSBundle.mainBundle.bundleIdentifier isEqualToString:@"com.apple.notificationcenterui"]) {
+    
+    // Option to draw using finder instead of Notification Center
+    Boolean injectFinder = false;
+    CFPreferencesGetAppBooleanValue( CFSTR("injectFinder"), CFSTR("org.w0lf.cleanHUD"), &injectFinder);
+    NSString *bundleID = @"com.apple.notificationcenterui";
+    if (injectFinder) bundleID = @"com.apple.finder";
+    
+    // Option to show in iOS style
+    CFPreferencesGetAppBooleanValue( CFSTR("iOSStyle"), CFSTR("org.w0lf.cleanHUD"), &iOSStyle);
+    
+    if ([NSBundle.mainBundle.bundleIdentifier isEqualToString:bundleID]) {
         [[NSDistributedNotificationCenter defaultCenter] addObserverForName:@"com.w0lf.cleanHUDUpdate"
                                                                      object:nil
                                                                       queue:nil
@@ -90,30 +98,10 @@ const CFStringRef kDisplayBrightness = CFSTR(kIODisplayBrightnessKey);
         }];
     }
     
-    // NSLog(@"wb_ test0 : %@", NSClassFromString(@"KeyboardALSAlgorithm"));
-    // NSLog(@"wb_ test1 : %@", NSClassFromString(@"KeyboardALSAlgorithmHID"));
-    // NSLog(@"wb_ test2 : %@", NSClassFromString(@"KeyboardALSAlgorithmLegacy"));
-    
-    /* Swizzle */
-//    ZKSwizzle(wb_VolumeStateMachine, VolumeStateMachine);
-//    ZKSwizzle(wb_DisplayStateMachine, DisplayStateMachine);
-//    ZKSwizzle(wb_KeyboardStateMachine, KeyboardStateMachine);
-//
-//    if (NSClassFromString(@"KeyboardALSAlgorithmHID")) {
-//        ZKSwizzle(wb_KeyboardALSAlgorithmHID, KeyboardALSAlgorithmHID);
-//        ZKSwizzle(wb_KeyboardALSAlgorithmLegacy, KeyboardALSAlgorithmLegacy);
-//    } else {
-//        ZKSwizzle(wb_KeyboardALSAlgorithm, KeyboardALSAlgorithm);
-//    }
-//
-    
     ZKSwizzle(wb_ControlStripVolumeButton, ControlStrip.VolumeButton);
     ZKSwizzle(wb_ControlStripBrightnessButton, ControlStrip.BrightnessButton);
-    
-    ZKSwizzle(wb_OSDRoundWindow, OSDUIHelper.OSDRoundWindow);
     ZKSwizzle(wb_OSDUIHelperOSDUIHelper, OSDUIHelper.OSDUIHelper);
-
-    NSLog(@"macOS %@, %@ loaded %@...", [[NSProcessInfo processInfo] operatingSystemVersionString], [[NSProcessInfo processInfo] processName], [self class]);
+    NSLog(@"macOS %@, %@ loaded %@...", NSProcessInfo.processInfo.operatingSystemVersionString, NSProcessInfo.processInfo.processName, [self class]);
 }
 
 - (void)initializeWindow {
@@ -147,7 +135,6 @@ const CFStringRef kDisplayBrightness = CFSTR(kIODisplayBrightnessKey);
     
     [myWin makeKeyAndOrderFront:nil];
     [myWin setLevel:NSMainMenuWindowLevel + 2];
-//    [myWin setLevel:NSMainMenuWindowLevel + 99999];
     [myWin setMovableByWindowBackground:NO];
     [myWin makeKeyAndOrderFront:nil];
     [myWin setIgnoresMouseEvents:YES];
@@ -190,9 +177,9 @@ const CFStringRef kDisplayBrightness = CFSTR(kIODisplayBrightnessKey);
     // Add subviews to window HUD
     [myWin.contentView setWantsLayer:true];
     [myWin.contentView addSubview:indiBlur];
-    [myWin.contentView addSubview:vol];
     [myWin.contentView addSubview:indiBackground];
     [myWin.contentView addSubview:indi];
+    [myWin.contentView addSubview:vol];
     
     // Round conrners
     [myWin.contentView.layer setCornerRadius:4];
@@ -209,12 +196,9 @@ const CFStringRef kDisplayBrightness = CFSTR(kIODisplayBrightnessKey);
     [indi setDoubleValue:100];
     [indi setDoubleValue:hudValue];
     
-    // Check for Dark mode
+    // Check for darkness below window
     int darkMode = 0;
-//    NSString *osxMode = [[NSUserDefaults standardUserDefaults] stringForKey:@"AppleInterfaceStyle"];
-//    if ([osxMode isEqualToString:@"Dark"]) darkMode = 1; else darkMode = 0;
     NSImage *displayImage = [NSImage new];
-    
     Boolean useDark = [self useDarkColors];
     darkMode = useDark;
     
@@ -268,8 +252,36 @@ const CFStringRef kDisplayBrightness = CFSTR(kIODisplayBrightnessKey);
         yPos -= 22;
     
     // Set origin
-    CGPoint frmLoc = CGPointMake(xPos, yPos);
-    [myWin setFrameOrigin:frmLoc];
+    
+    if (iOSStyle) {
+        // iOS style
+        yPos -= 58;
+        xPos -= 32;
+        [indi setHidden:true];
+        [indiBackground.layer setBorderColor:indi.emptyColor.CGColor];
+        [indiBackground.layer setBackgroundColor:NSColor.whiteColor.CGColor];
+        [indiBackground.layer setCornerRadius:0];
+        [indiBackground setFrame:CGRectMake(0, 0, 300 * (indi.doubleValue / 100), 30)]; // 300 * (indi.doubleValue / 100)
+        [myWin.contentView.layer setCornerRadius:10];
+        [myWin setFrame:CGRectMake(xPos, yPos, 300, 30) display:true];
+        NSArray *imagesArray = [imageStorage objectAtIndex:hudType];
+        if (hudType != 0) {
+            displayImage = [imagesArray objectAtIndex:0];
+        } else {
+            NSArray *imgList = [[NSArray alloc] initWithArray:[imagesArray objectAtIndex:0]];
+            if ([self getMuteState]) {
+                [indi setDoubleValue:0];
+                displayImage = [imgList objectAtIndex:0];
+            } else {
+                displayImage = [imgList objectAtIndex:ceil(hudValue / 33.34)];
+            }
+        }
+        [vol setImage:displayImage];
+        [vol setFrame:CGRectMake(10, 0, 30, 30)];
+    } else {
+        CGPoint frmLoc = CGPointMake(xPos, yPos);
+        [myWin setFrameOrigin:frmLoc];
+    }
     
     // Set window level to be above everything
 //    [myWin setLevel:NSMainMenuWindowLevel + 2];
@@ -329,8 +341,7 @@ const CFStringRef kDisplayBrightness = CFSTR(kIODisplayBrightnessKey);
     return (BOOL)isMuted;
 }
 
-- (float)get_brightness
-{
+- (float)get_brightness {
     float brightness = 1.0f;
     io_iterator_t iterator;
     kern_return_t result =
@@ -617,98 +628,15 @@ const CFStringRef kDisplayBrightness = CFSTR(kIODisplayBrightnessKey);
 /* wb_OSDUIHelper.OSDRoundWindow */
 
 @interface wb_OSDRoundWindow : NSWindow
-- (void)hackWindow:(int)hudType :(float)hudValue;
 @end
 
 @implementation wb_OSDRoundWindow
-
-- (void)hackWindow:(int)hudType :(float)hudValue {
-    // Set our location
-    [self setFrame:myWin.frame display:true];
-
-    // Update progress indicator value
-    [indi setDoubleValue:100];
-    [indi setDoubleValue:hudValue];
-
-    // Check for Dark mode
-    int darkMode = 0;
-    NSImageView *dankness = [[NSImageView alloc] initWithFrame:NSMakeRect(4, 0, 22, 22)];;
-    NSImage *displayImage = [NSImage new];
-    Boolean useDark = [plugin useDarkColors];
-    darkMode = useDark;
-
-    // Dark mode / Light mode
-    if (useDark) {
-        [indi setProgressColor:[NSColor whiteColor]];
-        [indiBackground.layer setBorderColor:[NSColor whiteColor].CGColor];
-        [indiBlur setMaterial:NSVisualEffectMaterialDark];
-    } else {
-        [indi setProgressColor:[NSColor blackColor]];
-        [indiBackground.layer setBorderColor:[NSColor blackColor].CGColor];
-        if (osx_ver > 10)
-            [indiBlur setMaterial:NSVisualEffectMaterialSelection];
-        else
-            [indiBlur setMaterial:NSVisualEffectMaterialLight];
-    }
-
-    // Set icon
-    NSArray *imagesArray = [imageStorage objectAtIndex:hudType];
-    if (hudType != 0) {
-        displayImage = [imagesArray objectAtIndex:darkMode];
-    } else {
-        imagesArray = [imagesArray objectAtIndex:darkMode];
-        if (hudValue == 0) {
-            displayImage = [imagesArray objectAtIndex:0];
-        } else {
-            displayImage = [imagesArray objectAtIndex:ceil(hudValue / 33.34)];
-        }
-    }
-
-    // Update layers
-    [indi updateLayer];
-    [dankness setImage:displayImage];
-
-    // Round conrners
-    [self.contentView.layer setCornerRadius:4];
-    
-    // Set up indicator to show volume percentage
-    NSView *aView = [[NSView alloc] initWithFrame:NSMakeRect(0, 0, 234, 22)];
-
-    // Add subviews to window HUD
-    [aView setSubviews:@[indiBlur, dankness, indiBackground, indi]];
-    [self setContentView:aView];
-    [aView setNeedsDisplay:true];
-    
-    // Position the HUD in the middle of the menubar on the active screen
-    CGRect scr = [NSScreen mainScreen].visibleFrame;
-    float xPos = scr.origin.x + (scr.size.width / 2) - 117;
-    float yPos = scr.origin.y + scr.size.height;
-    
-    // Adjust for fullscreen
-    if (yPos == [NSScreen mainScreen].frame.size.height || yPos == [NSScreen mainScreen].frame.size.height + [NSScreen mainScreen].frame.origin.y)
-        yPos -= 22;
-    
-    // Set origin
-    CGPoint frmLoc = CGPointMake(xPos, yPos);
-    [self setFrameOrigin:frmLoc];
-}
-
 @end
 
 /* wb_OSDUIHelper.OSDUIHelper */
 
 @interface wb_OSDUIHelperOSDUIHelper : NSObject
-{
-}
-
-//- (id)init;
 - (void)showImage:(long long)arg1 onDisplayID:(unsigned int)arg2 priority:(unsigned int)arg3 msecUntilFade:(unsigned int)arg4 filledChiclets:(unsigned int)arg5 totalChiclets:(unsigned int)arg6 locked:(BOOL)arg7;
-//- (void)showImageAtPath:(id)arg1 onDisplayID:(unsigned int)arg2 priority:(unsigned int)arg3 msecUntilFade:(unsigned int)arg4 withText:(id)arg5;
-//- (void)showImage:(long long)arg1 onDisplayID:(unsigned int)arg2 priority:(unsigned int)arg3 msecUntilFade:(unsigned int)arg4 withText:(id)arg5;
-//- (void)showFullScreenImage:(long long)arg1 onDisplayID:(unsigned int)arg2 priority:(unsigned int)arg3 msecToAnimate:(unsigned int)arg4;
-//- (void)showImage:(long long)arg1 onDisplayID:(unsigned int)arg2 priority:(unsigned int)arg3 msecUntilFade:(unsigned int)arg4;
-//- (void)fadeClassicImageOnDisplay:(unsigned int)arg1;
-
 @end
 
 @implementation wb_OSDUIHelperOSDUIHelper
@@ -749,10 +677,6 @@ const CFStringRef kDisplayBrightness = CFSTR(kIODisplayBrightnessKey);
         
 //        ZKOrig(void, arg1, arg2, arg3, arg4, arg5, arg6, arg7);
         [[NSDistributedNotificationCenter defaultCenter] postNotificationName:@"com.w0lf.cleanHUDUpdate" object:[NSString stringWithFormat:@"%d:%f", HUDType, percentageFull] userInfo:nil deliverImmediately:true];
-//        [[NSDistributedNotificationCenter defaultCenter] postNotificationName:@"com.w0lf.cleanHUDUpdate" object:[NSString stringWithFormat:@"%d:%f", HUDType, percentageFull]];
-//        wb_OSDRoundWindow *p = (wb_OSDRoundWindow*)[NSApp windows].firstObject;
-//        NSLog(@"xyz %@", NSApp.windows);
-//        [p hackWindow:HUDType :percentageFull];
     }
 }
 

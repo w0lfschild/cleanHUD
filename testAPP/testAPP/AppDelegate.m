@@ -299,9 +299,9 @@ NSArray *imageStorage;
     // Add subviews to window HUD
     [myWin.contentView setWantsLayer:true];
     [myWin.contentView addSubview:indiBlur];
-    [myWin.contentView addSubview:vol];
     [myWin.contentView addSubview:indiBackground];
     [myWin.contentView addSubview:indi];
+    [myWin.contentView addSubview:vol];
     
     // Round conrners
     [myWin.contentView.layer setCornerRadius:4];
@@ -324,7 +324,7 @@ NSArray *imageStorage;
 //    myWin
     Boolean useDark = [self useDarkColors];
     darkMode = useDark;
-    
+        
     //    NSLog(@"cleanHUD: Darkmode : %d", darkMode);
     
     // Dark mode / Light mode
@@ -372,8 +372,38 @@ NSArray *imageStorage;
         yPos -= 22;
     
     // Set origin
-    CGPoint frmLoc = CGPointMake(xPos, yPos);
-    [myWin setFrameOrigin:frmLoc];
+//    CGPoint frmLoc = CGPointMake(xPos, yPos);
+//    [myWin setFrameOrigin:frmLoc];
+    
+    NSDate *methodStart = [NSDate date];
+    Boolean iOSStyle;
+    CFPreferencesGetAppBooleanValue( CFSTR("iOSStyle"), CFSTR("org.w0lf.cleanHUD"), &iOSStyle);
+    NSLog(@"%hhu", iOSStyle);
+    NSDate *methodFinish = [NSDate date];
+    NSTimeInterval executionTime = [methodFinish timeIntervalSinceDate:methodStart];
+    NSLog(@"executionTime = %f", executionTime);
+    
+    // iOS style
+    yPos -= 58;
+    xPos -= 32;
+    [indi setHidden:true];
+    [indiBackground.layer setBorderColor:indi.emptyColor.CGColor];
+    [indiBackground.layer setBackgroundColor:NSColor.whiteColor.CGColor];
+    [indiBackground.layer setCornerRadius:0];
+    [indiBackground setFrame:CGRectMake(0, 0, 300 * (indi.doubleValue / 100), 30)]; // 300 * (indi.doubleValue / 100)
+    [myWin.contentView.layer setCornerRadius:10];
+    [myWin setFrame:CGRectMake(xPos, yPos, 300, 30) display:true];
+    if (hudType == 0) {
+        NSArray *imgList = [[NSArray alloc] initWithArray:[imagesArray objectAtIndex:0]];
+        if ([self getMuteState]) {
+            [indi setDoubleValue:0];
+            displayImage = [imgList objectAtIndex:0];
+        } else {
+            displayImage = [imgList objectAtIndex:ceil(hudValue / 33.34)];
+        }
+    }
+    [vol setImage:displayImage];
+    [vol setFrame:CGRectMake(10, 0, 30, 30)];
     
     // Set window level to be above everything
     [myWin setLevel:NSMainMenuWindowLevel + 2];

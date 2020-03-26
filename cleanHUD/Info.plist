@@ -15,11 +15,11 @@
 	<key>CFBundlePackageType</key>
 	<string>BNDL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>0.8.0</string>
+	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleVersion</key>
-	<string>0.8.0</string>
+	<string>162</string>
 	<key>NSHumanReadableCopyright</key>
 	<string>Copyright © 2019 macEnhance. All rights reserved.</string>
 	<key>NSPrincipalClass</key>
@@ -37,6 +37,10 @@
 		<dict>
 			<key>BundleIdentifier</key>
 			<string>com.apple.notificationcenterui</string>
+		</dict>
+		<dict>
+			<key>BundleIdentifier</key>
+			<string>com.apple.finder</string>
 		</dict>
 	</array>
 </dict>
