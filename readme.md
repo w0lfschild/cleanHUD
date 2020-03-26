@@ -1,6 +1,7 @@
 # cleanHUD
 
-![preview](preview.png) 
+![standard_preview](preview.png) 
+![animated_rpeview](preview.gif) 
 
 # Information:
 
