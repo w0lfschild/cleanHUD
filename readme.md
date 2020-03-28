@@ -13,10 +13,10 @@
 
 The avalible settings are:
 
-`macOSStyle` - `bool` 
-`useCustomColor` - `bool`
-`sliderColor` - `hex string`
-`iconColor` - `hex string`
+- `macOSStyle` - `bool` 
+- `useCustomColor` - `bool`
+- `sliderColor` - `hex string`
+- `iconColor` - `hex string`
 
 Example: 
 
