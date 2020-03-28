@@ -19,7 +19,7 @@
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleVersion</key>
-	<string>162</string>
+	<string>416</string>
 	<key>NSHumanReadableCopyright</key>
 	<string>Copyright © 2019 macEnhance. All rights reserved.</string>
 	<key>NSPrincipalClass</key>
@@ -29,18 +29,6 @@
 		<dict>
 			<key>BundleIdentifier</key>
 			<string>com.apple.OSDUIHelper</string>
-		</dict>
-		<dict>
-			<key>BundleIdentifier</key>
-			<string>com.apple.controlstrip</string>
-		</dict>
-		<dict>
-			<key>BundleIdentifier</key>
-			<string>com.apple.notificationcenterui</string>
-		</dict>
-		<dict>
-			<key>BundleIdentifier</key>
-			<string>com.apple.finder</string>
 		</dict>
 	</array>
 </dict>

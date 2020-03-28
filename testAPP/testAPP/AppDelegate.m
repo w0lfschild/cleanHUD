@@ -390,7 +390,13 @@ NSArray *imageStorage;
     [indiBackground.layer setBorderColor:indi.emptyColor.CGColor];
     [indiBackground.layer setBackgroundColor:NSColor.whiteColor.CGColor];
     [indiBackground.layer setCornerRadius:0];
-    [indiBackground setFrame:CGRectMake(0, 0, 300 * (indi.doubleValue / 100), 30)]; // 300 * (indi.doubleValue / 100)
+    
+    [NSAnimationContext runAnimationGroup:^(NSAnimationContext *context) {
+        context.duration = 0.2;
+        [indiBackground.animator setFrame:CGRectMake(0, 0, 300 * (indi.doubleValue / 100), 30)];
+    } completionHandler:^{ }];
+    
+//    [indiBackground setFrame:CGRectMake(0, 0, 300 * (indi.doubleValue / 100), 30)]; // 300 * (indi.doubleValue / 100)
     [myWin.contentView.layer setCornerRadius:10];
     [myWin setFrame:CGRectMake(xPos, yPos, 300, 30) display:true];
     if (hudType == 0) {

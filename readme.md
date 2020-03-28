@@ -5,9 +5,27 @@
 
 # Information:
 
-- Designed for 10.10+   
-- cleanHUD is a MacForge plugin that gives you a minimal volume/brightness HUD in macOS   
+- Designed for macOS 10.12 and up   
+- cleanHUD is a MacForge plugin that gives you a clean minimal volume/brightness HUD in macOS styled in 2 possible ways
 - Author: [w0lfschild](https://github.com/w0lfschild)
+
+# Settings
+
+The avalible settings are:
+
+`macOSStyle` - `bool` 
+`useCustomColor` - `bool`
+`sliderColor` - `hex string`
+`iconColor` - `hex string`
+
+Example: 
+
+```
+defaults write ~/Library/Containers/com.apple.OSDUIHelper/Data/Library/Preferences/com.apple.OSDUIHelper.plist macOSStyle -bool true
+defaults write ~/Library/Containers/com.apple.OSDUIHelper/Data/Library/Preferences/com.apple.OSDUIHelper.plist useCustomColor -bool true
+defaults write ~/Library/Containers/com.apple.OSDUIHelper/Data/Library/Preferences/com.apple.OSDUIHelper.plist sliderColor -string f5ad42
+defaults write ~/Library/Containers/com.apple.OSDUIHelper/Data/Library/Preferences/com.apple.OSDUIHelper.plist iconColor -string f5426f
+```
 
 # Installation:
 

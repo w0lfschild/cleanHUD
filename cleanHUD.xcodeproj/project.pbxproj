@@ -7,44 +7,17 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		79D9657A1E0A6B8200556E90 /* Volume1.png in Resources */ = {isa = PBXBuildFile; fileRef = 79D965721E0A6B8200556E90 /* Volume1.png */; };
-		79D9657B1E0A6B8200556E90 /* Volume1_blk.png in Resources */ = {isa = PBXBuildFile; fileRef = 79D965731E0A6B8200556E90 /* Volume1_blk.png */; };
-		79D9657C1E0A6B8200556E90 /* Volume2.png in Resources */ = {isa = PBXBuildFile; fileRef = 79D965741E0A6B8200556E90 /* Volume2.png */; };
-		79D9657D1E0A6B8200556E90 /* Volume2_blk.png in Resources */ = {isa = PBXBuildFile; fileRef = 79D965751E0A6B8200556E90 /* Volume2_blk.png */; };
-		79D9657E1E0A6B8200556E90 /* Volume3.png in Resources */ = {isa = PBXBuildFile; fileRef = 79D965761E0A6B8200556E90 /* Volume3.png */; };
-		79D9657F1E0A6B8200556E90 /* Volume3_blk.png in Resources */ = {isa = PBXBuildFile; fileRef = 79D965771E0A6B8200556E90 /* Volume3_blk.png */; };
-		79D965801E0A6B8200556E90 /* Volume4.png in Resources */ = {isa = PBXBuildFile; fileRef = 79D965781E0A6B8200556E90 /* Volume4.png */; };
-		79D965811E0A6B8200556E90 /* Volume4_blk.png in Resources */ = {isa = PBXBuildFile; fileRef = 79D965791E0A6B8200556E90 /* Volume4_blk.png */; };
-		79D965831E0A6B8D00556E90 /* keyboard_icon_blk.png in Resources */ = {isa = PBXBuildFile; fileRef = 79D965821E0A6B8D00556E90 /* keyboard_icon_blk.png */; };
-		79D965851E0A6B9500556E90 /* display_icon_blk.png in Resources */ = {isa = PBXBuildFile; fileRef = 79D965841E0A6B9500556E90 /* display_icon_blk.png */; };
 		FBF475021E0A111000EFFE6F /* AYProgressIndicator.m in Sources */ = {isa = PBXBuildFile; fileRef = FBF474FA1E0A111000EFFE6F /* AYProgressIndicator.m */; };
 		FBF475031E0A111000EFFE6F /* cleanHUD.m in Sources */ = {isa = PBXBuildFile; fileRef = FBF474FB1E0A111000EFFE6F /* cleanHUD.m */; };
-		FBF475041E0A111000EFFE6F /* display_icon.png in Resources */ = {isa = PBXBuildFile; fileRef = FBF474FC1E0A111000EFFE6F /* display_icon.png */; };
-		FBF475051E0A111000EFFE6F /* ISSoundAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = FBF474FE1E0A111000EFFE6F /* ISSoundAdditions.m */; };
-		FBF475061E0A111000EFFE6F /* keyboard_icon.png in Resources */ = {isa = PBXBuildFile; fileRef = FBF474FF1E0A111000EFFE6F /* keyboard_icon.png */; };
 		FBF475071E0A111000EFFE6F /* ZKSwizzle.m in Sources */ = {isa = PBXBuildFile; fileRef = FBF475011E0A111000EFFE6F /* ZKSwizzle.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		79D965721E0A6B8200556E90 /* Volume1.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = Volume1.png; path = icons/Volume1.png; sourceTree = "<group>"; };
-		79D965731E0A6B8200556E90 /* Volume1_blk.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = Volume1_blk.png; path = icons/Volume1_blk.png; sourceTree = "<group>"; };
-		79D965741E0A6B8200556E90 /* Volume2.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = Volume2.png; path = icons/Volume2.png; sourceTree = "<group>"; };
-		79D965751E0A6B8200556E90 /* Volume2_blk.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = Volume2_blk.png; path = icons/Volume2_blk.png; sourceTree = "<group>"; };
-		79D965761E0A6B8200556E90 /* Volume3.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = Volume3.png; path = icons/Volume3.png; sourceTree = "<group>"; };
-		79D965771E0A6B8200556E90 /* Volume3_blk.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = Volume3_blk.png; path = icons/Volume3_blk.png; sourceTree = "<group>"; };
-		79D965781E0A6B8200556E90 /* Volume4.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = Volume4.png; path = icons/Volume4.png; sourceTree = "<group>"; };
-		79D965791E0A6B8200556E90 /* Volume4_blk.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = Volume4_blk.png; path = icons/Volume4_blk.png; sourceTree = "<group>"; };
-		79D965821E0A6B8D00556E90 /* keyboard_icon_blk.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = keyboard_icon_blk.png; path = icons/keyboard_icon_blk.png; sourceTree = "<group>"; };
-		79D965841E0A6B9500556E90 /* display_icon_blk.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = display_icon_blk.png; path = icons/display_icon_blk.png; sourceTree = "<group>"; };
 		FBF474EF1E0A10F000EFFE6F /* cleanHUD.bundle */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = cleanHUD.bundle; sourceTree = BUILT_PRODUCTS_DIR; };
 		FBF474F31E0A10F000EFFE6F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		FBF474F91E0A111000EFFE6F /* AYProgressIndicator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AYProgressIndicator.h; sourceTree = "<group>"; };
 		FBF474FA1E0A111000EFFE6F /* AYProgressIndicator.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AYProgressIndicator.m; sourceTree = "<group>"; };
 		FBF474FB1E0A111000EFFE6F /* cleanHUD.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = cleanHUD.m; sourceTree = "<group>"; };
-		FBF474FC1E0A111000EFFE6F /* display_icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = display_icon.png; path = icons/display_icon.png; sourceTree = "<group>"; };
-		FBF474FD1E0A111000EFFE6F /* ISSoundAdditions.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ISSoundAdditions.h; sourceTree = "<group>"; };
-		FBF474FE1E0A111000EFFE6F /* ISSoundAdditions.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ISSoundAdditions.m; sourceTree = "<group>"; };
-		FBF474FF1E0A111000EFFE6F /* keyboard_icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = keyboard_icon.png; path = icons/keyboard_icon.png; sourceTree = "<group>"; };
 		FBF475001E0A111000EFFE6F /* ZKSwizzle.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZKSwizzle.h; sourceTree = "<group>"; };
 		FBF475011E0A111000EFFE6F /* ZKSwizzle.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ZKSwizzle.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -81,8 +54,6 @@
 			children = (
 				FBF475081E0A112900EFFE6F /* ZKSwizzle */,
 				FBF475091E0A114100EFFE6F /* AYProgress */,
-				FBF4750B1E0A116B00EFFE6F /* ISSound */,
-				FBF4750A1E0A116000EFFE6F /* Icons */,
 				FBF474FB1E0A111000EFFE6F /* cleanHUD.m */,
 				FBF474F31E0A10F000EFFE6F /* Info.plist */,
 			);
@@ -105,34 +76,6 @@
 				FBF474FA1E0A111000EFFE6F /* AYProgressIndicator.m */,
 			);
 			name = AYProgress;
-			sourceTree = "<group>";
-		};
-		FBF4750A1E0A116000EFFE6F /* Icons */ = {
-			isa = PBXGroup;
-			children = (
-				79D965721E0A6B8200556E90 /* Volume1.png */,
-				79D965731E0A6B8200556E90 /* Volume1_blk.png */,
-				79D965741E0A6B8200556E90 /* Volume2.png */,
-				79D965751E0A6B8200556E90 /* Volume2_blk.png */,
-				79D965761E0A6B8200556E90 /* Volume3.png */,
-				79D965771E0A6B8200556E90 /* Volume3_blk.png */,
-				79D965781E0A6B8200556E90 /* Volume4.png */,
-				79D965791E0A6B8200556E90 /* Volume4_blk.png */,
-				FBF474FC1E0A111000EFFE6F /* display_icon.png */,
-				FBF474FF1E0A111000EFFE6F /* keyboard_icon.png */,
-				79D965821E0A6B8D00556E90 /* keyboard_icon_blk.png */,
-				79D965841E0A6B9500556E90 /* display_icon_blk.png */,
-			);
-			name = Icons;
-			sourceTree = "<group>";
-		};
-		FBF4750B1E0A116B00EFFE6F /* ISSound */ = {
-			isa = PBXGroup;
-			children = (
-				FBF474FD1E0A111000EFFE6F /* ISSoundAdditions.h */,
-				FBF474FE1E0A111000EFFE6F /* ISSoundAdditions.m */,
-			);
-			name = ISSound;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -167,6 +110,8 @@
 				TargetAttributes = {
 					FBF474EE1E0A10F000EFFE6F = {
 						CreatedOnToolsVersion = 6.2;
+						DevelopmentTeam = EX596BNL45;
+						ProvisioningStyle = Automatic;
 					};
 				};
 			};
@@ -193,18 +138,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				FBF475041E0A111000EFFE6F /* display_icon.png in Resources */,
-				79D9657E1E0A6B8200556E90 /* Volume3.png in Resources */,
-				79D965831E0A6B8D00556E90 /* keyboard_icon_blk.png in Resources */,
-				FBF475061E0A111000EFFE6F /* keyboard_icon.png in Resources */,
-				79D9657D1E0A6B8200556E90 /* Volume2_blk.png in Resources */,
-				79D965851E0A6B9500556E90 /* display_icon_blk.png in Resources */,
-				79D9657A1E0A6B8200556E90 /* Volume1.png in Resources */,
-				79D9657F1E0A6B8200556E90 /* Volume3_blk.png in Resources */,
-				79D9657C1E0A6B8200556E90 /* Volume2.png in Resources */,
-				79D9657B1E0A6B8200556E90 /* Volume1_blk.png in Resources */,
-				79D965811E0A6B8200556E90 /* Volume4_blk.png in Resources */,
-				79D965801E0A6B8200556E90 /* Volume4.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -237,7 +170,6 @@
 			files = (
 				FBF475021E0A111000EFFE6F /* AYProgressIndicator.m in Sources */,
 				FBF475031E0A111000EFFE6F /* cleanHUD.m in Sources */,
-				FBF475051E0A111000EFFE6F /* ISSoundAdditions.m in Sources */,
 				FBF475071E0A111000EFFE6F /* ZKSwizzle.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -347,15 +279,19 @@
 		FBF474F71E0A10F000EFFE6F /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 91;
 				DEPLOYMENT_LOCATION = YES;
+				DEVELOPMENT_TEAM = EX596BNL45;
 				DSTROOT = /;
 				INFOPLIST_FILE = cleanHUD/Info.plist;
 				INSTALL_PATH = "/Library/Application Support/MacEnhance/Plugins";
-				MARKETING_VERSION = 0.9.1;
+				MARKETING_VERSION = 0.10.5;
 				PRODUCT_BUNDLE_IDENTIFIER = "org.w0lf.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = NO;
 				WRAPPER_EXTENSION = bundle;
 			};
@@ -364,15 +300,19 @@
 		FBF474F81E0A10F000EFFE6F /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 91;
 				DEPLOYMENT_LOCATION = YES;
+				DEVELOPMENT_TEAM = EX596BNL45;
 				DSTROOT = /;
 				INFOPLIST_FILE = cleanHUD/Info.plist;
 				INSTALL_PATH = "/Library/Application Support/MacEnhance/Plugins";
-				MARKETING_VERSION = 0.9.1;
+				MARKETING_VERSION = 0.10.5;
 				PRODUCT_BUNDLE_IDENTIFIER = "org.w0lf.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = NO;
 				WRAPPER_EXTENSION = bundle;
 			};

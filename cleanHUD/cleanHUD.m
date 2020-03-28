@@ -3,61 +3,80 @@
 //  cleanHUD
 //
 //  Created by Wolfgang Baird on 8/15/16.
-//  Copyright © 2016 Wolfgang Baird. All rights reserved.
+//  Copyright © 2016 - 2020 Wolfgang Baird. All rights reserved.
 //
-
-#ifdef DEBUG
-#   define DLog(fmt, ...) NSLog((@"%s [Line %d] " fmt), __PRETTY_FUNCTION__, __LINE__, ##__VA_ARGS__);
-#else
-#   define DLog(...)
-#endif
 
 // Imports & Includes
 @import AppKit;
 @import CoreAudio;
-
 #include "ZKSwizzle.h"
-#include "ISSoundAdditions.h"
 #include "AYProgressIndicator.h"
-#include <IOKit/graphics/IOGraphicsLib.h>
 
 // Interfaces
-
 @interface cleanHUD : NSObject
 @end
 
-@interface my_NSWindow : NSWindow
+@interface mech_NSWindow : NSWindow
 - (NSRect)constrainFrameRect:(NSRect)frameRect toScreen:(NSScreen *)screen;
 @end
 
 // Variables
-
+mech_NSWindow *w;
 cleanHUD *plugin;
-my_NSWindow *myWin;
-NSView *myView;
 AYProgressIndicator *indi;
-NSView *indiBackground;
 NSVisualEffectView *indiBlur;
-int isControlStripDrawing;
-int animateHUD;
-float mybrightness;
-NSInteger osx_ver;
 NSImageView *vol;
 NSArray *imageStorage;
-Boolean iOSStyle;
+static CGFloat windowHeight = 30;
+static CGFloat windowWidth = 300;
+static int animateHUD = 0;
+float mybrightness;
+NSInteger osx_ver;
+
+// Customization
+Boolean macOSStyle;
+Boolean useCustomColor;
+NSColor *iconColor;
+NSColor *sliderColor;
+
 
 // Implementations
-
-@implementation my_NSWindow
+@implementation mech_NSWindow
 - (NSRect)constrainFrameRect:(NSRect)frameRect toScreen:(NSScreen *)screen {
     return frameRect;
 }
 @end
 
-@implementation cleanHUD
+@implementation NSImage (PresidentialTint)
 
-const int kMaxDisplays = 16;
-const CFStringRef kDisplayBrightness = CFSTR(kIODisplayBrightnessKey);
+- (NSImage *)imageTintedWithColor:(NSColor *)tint {
+    NSImage *image = [self copy];
+    if (tint) {
+        [image lockFocus];
+        [tint set];
+        NSRect imageRect = {NSZeroPoint, [image size]};
+        NSRectFillUsingOperation(imageRect, NSCompositeSourceIn);
+        [image unlockFocus];
+    }
+    return image;
+}
+
+@end
+
+@implementation NSUserDefaults (BoolMate)
+
+- (Boolean)boolForKey:(NSString *)aKey {
+    Boolean theBool = false;
+    NSObject *theData = [self valueForKey:aKey];
+    if (theData != nil)
+        theBool = [[self valueForKey:aKey] boolValue];
+    return theBool;
+}
+ 
+@end
+
+
+@implementation cleanHUD
 
 + (cleanHUD*) sharedInstance {
     static cleanHUD* plugin = nil;
@@ -67,253 +86,332 @@ const CFStringRef kDisplayBrightness = CFSTR(kIODisplayBrightnessKey);
 }
 
 + (void)load {
-    osx_ver = [[NSProcessInfo processInfo] operatingSystemVersion].minorVersion;
+    osx_ver = NSProcessInfo.processInfo.operatingSystemVersion.minorVersion;
     plugin = [cleanHUD sharedInstance];
-    [plugin initializeWindow];
-    
-//    if (![NSBundle.mainBundle.bundleIdentifier isEqualToString:@"com.apple.OSDUIHelper"]) {
-//    if ([NSBundle.mainBundle.bundleIdentifier isEqualToString:@"com.apple.systemuiserver"]) {
-//    if ([NSBundle.mainBundle.bundleIdentifier isEqualToString:@"com.apple.coreservices.uiagent"]) {
-    
-    // Option to draw using finder instead of Notification Center
-    Boolean injectFinder = false;
-    CFPreferencesGetAppBooleanValue( CFSTR("injectFinder"), CFSTR("org.w0lf.cleanHUD"), &injectFinder);
-    NSString *bundleID = @"com.apple.notificationcenterui";
-    if (injectFinder) bundleID = @"com.apple.finder";
+    iconColor = NSColor.whiteColor;
     
     // Option to show in iOS style
-    CFPreferencesGetAppBooleanValue( CFSTR("iOSStyle"), CFSTR("org.w0lf.cleanHUD"), &iOSStyle);
+    [plugin readPreferences];
+
+    // Initialize images
+    [plugin setupIconImages];
     
-    if ([NSBundle.mainBundle.bundleIdentifier isEqualToString:bundleID]) {
-        [[NSDistributedNotificationCenter defaultCenter] addObserverForName:@"com.w0lf.cleanHUDUpdate"
-                                                                     object:nil
-                                                                      queue:nil
-                                                                 usingBlock:^(NSNotification *notification) {
-                                                                     if (isControlStripDrawing == 0) {
-                                                                         NSArray *chunks = [notification.object componentsSeparatedByString: @":"];
-                                                                         int type = [chunks[0] intValue];
-                                                                         float num = [chunks[1] floatValue];
-                                                                         [[cleanHUD sharedInstance] showHUD:type :num];
-                                                                     }
-        }];
-    }
+    // Setup our window
+    [plugin initializeWindow];
+    [plugin adjustWindow];
     
-    ZKSwizzle(wb_ControlStripVolumeButton, ControlStrip.VolumeButton);
-    ZKSwizzle(wb_ControlStripBrightnessButton, ControlStrip.BrightnessButton);
-    ZKSwizzle(wb_OSDUIHelperOSDUIHelper, OSDUIHelper.OSDUIHelper);
+    // Log
     NSLog(@"macOS %@, %@ loaded %@...", NSProcessInfo.processInfo.operatingSystemVersionString, NSProcessInfo.processInfo.processName, [self class]);
 }
 
-- (void)initializeWindow {
+- (NSColor*)colorWithHexColorString:(NSString*)inColorString {
+    NSColor* result = nil;
+    unsigned colorCode = 0;
+    unsigned char redByte, greenByte, blueByte;
+
+    if (nil != inColorString) {
+         NSScanner* scanner = [NSScanner scannerWithString:inColorString];
+         (void) [scanner scanHexInt:&colorCode]; // ignore error
+    }
+    redByte = (unsigned char)(colorCode >> 16);
+    greenByte = (unsigned char)(colorCode >> 8);
+    blueByte = (unsigned char)(colorCode); // masks off high bits
+
+    result = [NSColor
+    colorWithCalibratedRed:(CGFloat)redByte / 0xff
+    green:(CGFloat)greenByte / 0xff
+    blue:(CGFloat)blueByte / 0xff
+    alpha:1.0];
+    return result;
+}
+
+- (void)readPreferences {
+    NSUserDefaults *d = [NSUserDefaults standardUserDefaults];
+    
+    // macOSStyle
+    macOSStyle = [d boolForKey:@"macOSStyle"];
+    
+    // Custom colors
+    useCustomColor = [d boolForKey:@"useCustomColor"];
+    NSString *ico = [d stringForKey:@"iconColor"];
+    if (ico != nil) {
+        NSColor *hexColor = [plugin colorWithHexColorString:ico];
+        if (![iconColor isEqualTo:hexColor]) {
+            iconColor = hexColor;
+            [plugin setupIconImages];
+        }
+    }
+    NSString *sld = [d stringForKey:@"sliderColor"];
+    if (sld != nil) sliderColor = [plugin colorWithHexColorString:sld];
+}
+
+- (void)setupIconImages {
     // Use some system images for the volume indicator
     NSMutableArray *blackVolumeImages = [NSMutableArray new];
     NSMutableArray *whiteVolumeImages = [NSMutableArray new];
     
-    NSString *bundlePath    = [[NSBundle bundleForClass:[self class]] bundlePath];
-    for (int numb = 1; numb <= 4; numb++) {
-        [blackVolumeImages addObject:[[NSImage alloc] initWithContentsOfFile:[NSString stringWithFormat:@"%@/Contents/Resources/Volume%d_blk.png", bundlePath, numb]]];
-        [whiteVolumeImages addObject:[[NSImage alloc] initWithContentsOfFile:[NSString stringWithFormat:@"%@/Contents/Resources/Volume%d.png", bundlePath, numb]]];
+    NSMutableDictionary *store = @{@"mute" : [[NSImage alloc] initWithContentsOfFile:[[NSBundle mainBundle] pathForResource:@"Mute" ofType:@"pdf"]],
+                                @"volume" : [[NSImage alloc] initWithContentsOfFile:[[NSBundle mainBundle] pathForResource:@"Volume" ofType:@"pdf"]],
+                                @"kon" : [[NSImage alloc] initWithContentsOfFile:[[NSBundle mainBundle] pathForResource:@"kBright" ofType:@"pdf"]],
+                                @"koff" : [[NSImage alloc] initWithContentsOfFile:[[NSBundle mainBundle] pathForResource:@"kBrightOff" ofType:@"pdf"]],
+                                @"screen" : [[NSImage alloc] initWithContentsOfFile:[[NSBundle mainBundle] pathForResource:@"Brightness" ofType:@"pdf"]],
+    }.mutableCopy;
+    
+    // Crop off some extra blank space at the bottom of the images
+    for (NSString *key in store.allKeys) {
+        NSImage *image = [store valueForKey:key];
+        CGFloat imgWidth = image.size.width;
+        CGFloat imgheight = image.size.height * 0.86;
+        CGRect leftImgFrame = CGRectMake(0, 0, imgWidth, imgheight);
+        CGImageSourceRef source;
+        source = CGImageSourceCreateWithData((CFDataRef)[image TIFFRepresentation], NULL);
+        CGImageRef maskRef =  CGImageSourceCreateImageAtIndex(source, 0, NULL);
+        CGImageRef left = CGImageCreateWithImageInRect(maskRef, leftImgFrame);
+        NSImage *leftImage = [NSImage.alloc initWithCGImage:left size:CGSizeMake(imgWidth, imgheight)];
+        CGImageRelease(left);
+        [store setValue:leftImage forKey:key];
     }
-    NSImage *blackScreen    = [[NSImage alloc] initWithContentsOfFile:[bundlePath stringByAppendingString:@"/Contents/Resources/display_icon_blk.png"]];
-    NSImage *whiteScreen    = [[NSImage alloc] initWithContentsOfFile:[bundlePath stringByAppendingString:@"/Contents/Resources/display_icon.png"]];
-    NSImage *blackKeyboard  = [[NSImage alloc] initWithContentsOfFile:[bundlePath stringByAppendingString:@"/Contents/Resources/keyboard_icon_blk.png"]];
-    NSImage *whiteKeyboard  = [[NSImage alloc] initWithContentsOfFile:[bundlePath stringByAppendingString:@"/Contents/Resources/keyboard_icon.png"]];
+    
+    // Mute
+    [blackVolumeImages addObject:[store valueForKey:@"mute"]];
+    [whiteVolumeImages addObject:[[store valueForKey:@"mute"] imageTintedWithColor:iconColor]];
+    
+    // Slice up the volume indicator for 1x and 2x volume
+    NSImage *image = [store valueForKey:@"volume"];
+    NSArray *percentages = @[[NSNumber numberWithFloat:0.6], [NSNumber numberWithFloat:0.7]];
+    for (NSNumber *numb in percentages) {
+        CGFloat imgWidth = image.size.width * numb.floatValue;
+        CGFloat imgheight = image.size.height;
+        CGRect leftImgFrame = CGRectMake(0, 0, imgWidth, imgheight);
+        CGImageSourceRef source;
+        source = CGImageSourceCreateWithData((CFDataRef)[image TIFFRepresentation], NULL);
+        CGImageRef maskRef =  CGImageSourceCreateImageAtIndex(source, 0, NULL);
+        CGImageRef left = CGImageCreateWithImageInRect(maskRef, leftImgFrame);
+        NSImage *leftImage = [NSImage.alloc initWithCGImage:left size:CGSizeMake(imgWidth, imgheight)];
+        CGImageRelease(left);
+        [blackVolumeImages addObject:leftImage];
+        [whiteVolumeImages addObject:[leftImage imageTintedWithColor:iconColor]];
+    }
+    
+    // 3x volume
+    [blackVolumeImages addObject:[store valueForKey:@"volume"]];
+    [whiteVolumeImages addObject:[[store valueForKey:@"volume"] imageTintedWithColor:iconColor]];
+    
+    // Keybaord
+    NSArray *blackKBImages = @[[store valueForKey:@"kon"] , [store valueForKey:@"koff"]];
+    NSArray *whiteKBImages = @[[[store valueForKey:@"kon"] imageTintedWithColor:iconColor], [[store valueForKey:@"koff"] imageTintedWithColor:iconColor]];
+    
+    // Add all the images to the imageStore array
     NSArray *volumeIMG      = [[NSArray alloc] initWithObjects:[blackVolumeImages copy], [whiteVolumeImages copy], nil];
-    NSArray *screenIMG      = [[NSArray alloc] initWithObjects:blackScreen, whiteScreen, nil];
-    NSArray *keyboardIMG    = [[NSArray alloc] initWithObjects:blackKeyboard, whiteKeyboard, nil];
-
+    NSArray *screenIMG      = [self createSetWithImage:[store valueForKey:@"screen"]];
+    NSArray *keyboardIMG    = [[NSArray alloc] initWithObjects:blackKBImages, whiteKBImages, nil];
     imageStorage = [[NSArray alloc] initWithObjects:volumeIMG, screenIMG, keyboardIMG, nil];
-    animateHUD = 0;
-    isControlStripDrawing = 0;
-    
-    // Set up window to float above menubar
+}
+
+- (void)initializeWindow {
+    // Main window
     CGRect scr = [NSScreen mainScreen].visibleFrame;
-    myWin = [[my_NSWindow alloc] initWithContentRect:NSMakeRect(scr.origin.x + (scr.size.width / 2) - 117, scr.origin.y + scr.size.height, 234, 22)
-                                           styleMask:0
-                                             backing:NSBackingStoreBuffered
-                                               defer:NO];
+    int adjust = 0; if (macOSStyle) adjust = 50;
+    w = [[mech_NSWindow alloc] initWithContentRect:NSMakeRect(scr.origin.x + (scr.size.width / 2) - (windowWidth / 2), scr.origin.y + scr.size.height - adjust, windowWidth, windowHeight)
+                                    styleMask:0
+                                      backing:NSBackingStoreBuffered
+                                        defer:NO];
     
-    [myWin makeKeyAndOrderFront:nil];
-    [myWin setLevel:NSMainMenuWindowLevel + 2];
-    [myWin setMovableByWindowBackground:NO];
-    [myWin makeKeyAndOrderFront:nil];
-    [myWin setIgnoresMouseEvents:YES];
-    [myWin setOpaque:false];
-    [myWin setBackgroundColor:[NSColor clearColor]];
-    
-    // Set up indicator to show volume percentage
-    NSRect indiFrame = NSMakeRect(30, 8, 200, 4);
-    if (osx_ver > 13) indiFrame = NSMakeRect(28, 9, 204, 4);
-    indi = [[AYProgressIndicator alloc] initWithFrame:indiFrame
-                                        progressColor:[NSColor whiteColor]
-                                           emptyColor:[NSColor clearColor]
-                                             minValue:0
-                                             maxValue:100
-                                         currentValue:0];
-    [indi setHidden:NO];
-    [indi setWantsLayer:YES];
-    [indi.layer setCornerRadius:2];
-    
-    // Set up indicator border
-    indiBackground = [[NSView alloc] init];
-    [indiBackground setFrame:NSMakeRect(28, 8, 204, 6)];
-    [indiBackground setHidden:NO];
-    [indiBackground setWantsLayer:YES];
-    [indiBackground.layer setCornerRadius:3];
-    [indiBackground.layer setBackgroundColor:[NSColor clearColor].CGColor];
-    [indiBackground.layer setBorderColor:[NSColor whiteColor].CGColor];
-    [indiBackground.layer setBorderWidth:1];
-    
-    // Set up indicator background blur
-    indiBlur = [[NSVisualEffectView alloc] initWithFrame:[myWin.contentView bounds]];
+    // Background blur view
+    indiBlur = [[NSVisualEffectView alloc] initWithFrame:CGRectMake(0, 0, windowWidth, windowHeight)];
     [indiBlur setAutoresizingMask:NSViewWidthSizable|NSViewHeightSizable];
     [indiBlur setBlendingMode:NSVisualEffectBlendingModeBehindWindow];
     [indiBlur setMaterial:NSVisualEffectMaterialDark];
     [indiBlur setState:NSVisualEffectStateActive];
     
-    // Set up imageview for showing volume indicator
-    vol = [[NSImageView alloc] initWithFrame:NSMakeRect(4, 0, 22, 22)];
+    // Icon view
+    vol = [[NSImageView alloc] initWithFrame:NSMakeRect(10, 0, windowHeight + 10, windowHeight)];
+    [vol setImageAlignment:NSImageAlignLeft];
     
-    // Add subviews to window HUD
-    [myWin.contentView setWantsLayer:true];
-    [myWin.contentView addSubview:indiBlur];
-    [myWin.contentView addSubview:indiBackground];
-    [myWin.contentView addSubview:indi];
-    [myWin.contentView addSubview:vol];
+    // Indicator view
+    indi = [[AYProgressIndicator alloc] initWithFrame:NSMakeRect(0, 0, windowWidth, windowHeight)
+                                        progressColor:[NSColor whiteColor]
+                                           emptyColor:[NSColor clearColor]
+                                             minValue:0
+                                             maxValue:100
+                                         currentValue:0];
+    [indi setWantsLayer:YES];
+
+    // Set some properties for the window
+    [w makeKeyAndOrderFront:nil];
+    [w setLevel:NSMainMenuWindowLevel + 2];
+    [w setMovableByWindowBackground:NO];
+    [w makeKeyAndOrderFront:nil];
+    [w setIgnoresMouseEvents:YES];
+    [w setOpaque:NO];
+    [w setBackgroundColor:[NSColor clearColor]];
+    [w.contentView setWantsLayer:YES];
+    [w.contentView.layer setCornerRadius:10.0];
     
-    // Round conrners
-    [myWin.contentView.layer setCornerRadius:4];
+    [plugin adjustWindow];
     
-    // Hide HUD
-    [myWin setAlphaValue:0.0];
+    // Set our subviews, being mindful of order
+    [w.contentView setSubviews:@[indiBlur, indi, vol]];
     
-    // Init myView
-    myView = [[NSView alloc] initWithFrame:myWin.frame];
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        [NSAnimationContext runAnimationGroup:^(NSAnimationContext *context) {
+            context.duration = 0.25;
+            w.animator.alphaValue = 0;
+        }
+        completionHandler:^{ }];
+    });
+}
+
+- (void)adjustWindow {
+    if (macOSStyle) {
+        windowHeight = 22;
+        windowWidth = 240;
+    } else {
+        windowHeight = 30;
+        windowWidth = 300;
+    }
+    
+    // Adjust views if iOS style is enabled
+    if (macOSStyle) {
+        vol.frame = NSMakeRect(4, 0, windowHeight + 10, windowHeight);
+        indi.layer.cornerRadius = 3;
+        indi.frame = NSMakeRect(28, 9, 204, 6);
+        indi.layer.borderWidth = 1;
+        w.contentView.layer.cornerRadius = 4;
+    } else {
+        vol.frame = NSMakeRect(10, 0, windowHeight + 10, windowHeight);
+        indi.layer.cornerRadius = 0;
+        indi.frame = NSMakeRect(0, 0, windowWidth, windowHeight);
+        indi.layer.borderWidth = 0;
+        w.contentView.layer.cornerRadius = 10;
+    }
+}
+
+- (NSArray *)createSetWithImage:(NSImage *)image {
+    NSImage *whiteImage = [image imageTintedWithColor:iconColor];
+    return @[image, whiteImage];
 }
 
 - (void)showHUD :(int)hudType :(float)hudValue {
-    // Set progressbar
-    [indi setDoubleValue:100];
-    [indi setDoubleValue:hudValue];
+    if (animateHUD == 0) [plugin readPreferences];
     
-    // Check for darkness below window
-    int darkMode = 0;
-    NSImage *displayImage = [NSImage new];
-    Boolean useDark = [self useDarkColors];
-    darkMode = useDark;
+    dispatch_async(dispatch_get_main_queue(), ^{
+        // Dark mode / Light mode
+        int darkMode = 0;
     
-//    NSLog(@"cleanHUD: Darkmode : %d", darkMode);
+        // Position the HUD in the middle of the menubar on the active screen
+        CGRect scr = [NSScreen mainScreen].visibleFrame;
+        float xPos = scr.origin.x + (scr.size.width / 2) - (windowWidth / 2);
+        float yPos = scr.origin.y + scr.size.height + 1;
     
-    // Dark mode / Light mode
-    if (useDark) {
-        [indi setProgressColor:[NSColor whiteColor]];
-        [indiBackground.layer setBorderColor:[NSColor whiteColor].CGColor];
-        [indiBlur setMaterial:NSVisualEffectMaterialDark];
-    } else {
-        [indi setProgressColor:[NSColor blackColor]];
-        [indiBackground.layer setBorderColor:[NSColor blackColor].CGColor];
-        if (osx_ver > 10)
-            [indiBlur setMaterial:NSVisualEffectMaterialSelection];
-        else
-            [indiBlur setMaterial:NSVisualEffectMaterialLight];
-    }
-    
-    // Set icon
-    NSArray *imagesArray = [imageStorage objectAtIndex:hudType];
-    if (hudType != 0) {
-        displayImage = [imagesArray objectAtIndex:darkMode];
-    } else {
-        NSArray *imgList = [[NSArray alloc] initWithArray:[imagesArray objectAtIndex:darkMode]];
-        if ([self getMuteState]) {
-            [indi setDoubleValue:0];
-            displayImage = [imgList objectAtIndex:0];
-        } else {
-            displayImage = [imgList objectAtIndex:ceil(hudValue / 33.34)];
+        // Menubar hidden check
+        if ([NSApp presentationOptions] == NSApplicationPresentationAutoHideMenuBar ||
+            [NSApp presentationOptions] == NSApplicationPresentationHideMenuBar) {
+            if (NSEvent.mouseLocation.y < scr.size.height - windowHeight)
+                yPos -= windowHeight;
         }
-    }
     
-    [indi updateLayer];
-    [vol setImage:displayImage];
-    
-    // Position the HUD in the middle of the menubar on the active screen
-    CGRect scr = [NSScreen mainScreen].visibleFrame;
-    float xPos = scr.origin.x + (scr.size.width / 2) - 117;
-    float yPos = scr.origin.y + scr.size.height + 1;
-    
-    // Menubar hidden check
-     if ([NSApp presentationOptions] == NSApplicationPresentationAutoHideMenuBar ||
-         [NSApp presentationOptions] == NSApplicationPresentationHideMenuBar) {
-         if (NSEvent.mouseLocation.y < scr.size.height - 22)
-             yPos -= 22;
-     }
-    
-    // Adjust for fullscreen
-    if (yPos == scr.size.height || yPos == scr.size.height + scr.origin.y)
-        yPos -= 22;
-    
-    // Set origin
-    
-    if (iOSStyle) {
-        // iOS style
-        yPos -= 58;
-        xPos -= 32;
-        [indi setHidden:true];
-        [indiBackground.layer setBorderColor:indi.emptyColor.CGColor];
-        [indiBackground.layer setBackgroundColor:NSColor.whiteColor.CGColor];
-        [indiBackground.layer setCornerRadius:0];
-        [indiBackground setFrame:CGRectMake(0, 0, 300 * (indi.doubleValue / 100), 30)]; // 300 * (indi.doubleValue / 100)
-        [myWin.contentView.layer setCornerRadius:10];
-        [myWin setFrame:CGRectMake(xPos, yPos, 300, 30) display:true];
-        NSArray *imagesArray = [imageStorage objectAtIndex:hudType];
-        if (hudType != 0) {
-            displayImage = [imagesArray objectAtIndex:0];
+        // Adjust for fullscreen
+        if (yPos == scr.size.height || yPos == scr.size.height + scr.origin.y)
+            yPos -= windowHeight;
+        
+        // Adjust... some more
+        [plugin adjustWindow];
+        
+        // Adjust based on style
+        if (macOSStyle) {
+            NSString *osxMode = [[NSUserDefaults standardUserDefaults] stringForKey:@"AppleInterfaceStyle"];
+            darkMode = [osxMode isEqualToString:@"Dark"];
+            if (darkMode) {
+                [indi setProgressColor:NSColor.whiteColor];
+                [indi.layer setBorderColor:NSColor.whiteColor.CGColor];
+                [indiBlur setMaterial:NSVisualEffectMaterialDark];
+            } else {
+                [indi setProgressColor:NSColor.blackColor];
+                [indi.layer setBorderColor:NSColor.blackColor.CGColor];
+                [indiBlur setMaterial:NSVisualEffectMaterialSelection];
+            }
         } else {
-            NSArray *imgList = [[NSArray alloc] initWithArray:[imagesArray objectAtIndex:0]];
+            darkMode = 0;
+            yPos -= 50;
+            [indi setProgressColor:NSColor.whiteColor];
+            [indi.layer setBorderColor:NSColor.whiteColor.CGColor];
+            [indiBlur setMaterial:NSVisualEffectMaterialDark];
+        }
+        
+        // Custom colors
+        if (useCustomColor && sliderColor != nil) {
+            darkMode = 1;
+            [indi setProgressColor:sliderColor];
+            [indi.layer setBorderColor:sliderColor.CGColor];
+            [indiBlur setMaterial:NSVisualEffectMaterialSelection];
+        }
+        
+        // Get icon
+        NSImage *displayImage = [NSImage new];
+        NSArray *imagesArray = [imageStorage objectAtIndex:hudType];
+        float newHUDValue = hudValue;
+        // 0 = Volume, 1 = Screen, 2 = Keyboard
+        if (hudType == 0) {
+            NSArray *imgList = [[NSArray alloc] initWithArray:[imagesArray objectAtIndex:darkMode]];
             if ([self getMuteState]) {
-                [indi setDoubleValue:0];
-                displayImage = [imgList objectAtIndex:0];
+                newHUDValue = 0;
+                displayImage = imgList.firstObject;
             } else {
                 displayImage = [imgList objectAtIndex:ceil(hudValue / 33.34)];
             }
+        } else if (hudType == 2) {
+            NSArray *imgList = [[NSArray alloc] initWithArray:[imagesArray objectAtIndex:darkMode]];
+            if (hudValue == 0) {
+                newHUDValue = 0;
+                displayImage = imgList.lastObject;
+            } else {
+                displayImage = imgList.firstObject;
+            }
+        } else {
+            displayImage = [imagesArray objectAtIndex:darkMode];
         }
+
+        [indiBlur setFrame:CGRectMake(0, 0, windowWidth, windowHeight)];
+        [NSAnimationContext runAnimationGroup:^(NSAnimationContext *context) {
+            context.duration = 0.2;
+            [indi.animator setDoubleValue:newHUDValue];
+            if (hudType == 0 && [self getMuteState]) {
+                [indi.animator setDoubleValue:0];
+            }
+        }
+        completionHandler:^{ }];
         [vol setImage:displayImage];
-        [vol setFrame:CGRectMake(10, 0, 30, 30)];
-    } else {
-        CGPoint frmLoc = CGPointMake(xPos, yPos);
-        [myWin setFrameOrigin:frmLoc];
-    }
-    
-    // Set window level to be above everything
-//    [myWin setLevel:NSMainMenuWindowLevel + 2];
-    [myWin setLevel:NSMainMenuWindowLevel + 999];
-    [myWin setCollectionBehavior:NSWindowCollectionBehaviorCanJoinAllSpaces];
+        [w setFrame:CGRectMake(xPos, yPos, windowWidth, windowHeight) display:NO];
+        [w setAlphaValue:100.0];
+    });
     
     // Hide the window in 1 second
     animateHUD ++;
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 1.0 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
         [self hideHUD];
     });
-    
-    // Cancel any existing animation and show the window
-    [NSAnimationContext beginGrouping];
-    [[NSAnimationContext currentContext] setDuration:0.01];
-    [[myWin animator] setAlphaValue:1.0];
-    [NSAnimationContext endGrouping];
+
+    dispatch_async(dispatch_get_main_queue(), ^{
+        // Cancel any existing animation and show the window
+        [NSAnimationContext beginGrouping];
+        [[NSAnimationContext currentContext] setDuration:0.01];
+        [[w animator] setAlphaValue:1.0];
+        [NSAnimationContext endGrouping];
+    });
 }
 
 - (void)hideHUD {
     if (animateHUD <= 1) {
         // Fade out the HUD
         [NSAnimationContext runAnimationGroup:^(NSAnimationContext *context) {
-            context.duration = 1;
-            myWin.animator.alphaValue = 0;
+            context.duration = 2;
+            w.animator.alphaValue = 0;
         }
         completionHandler:^{ }];
     }
     if (animateHUD > 0)
         animateHUD--;
-    if (isControlStripDrawing > 0)
-        isControlStripDrawing--;
 }
 
 - (BOOL)getMuteState {
@@ -341,343 +439,43 @@ const CFStringRef kDisplayBrightness = CFSTR(kIODisplayBrightnessKey);
     return (BOOL)isMuted;
 }
 
-- (float)get_brightness {
-    float brightness = 1.0f;
-    io_iterator_t iterator;
-    kern_return_t result =
-    IOServiceGetMatchingServices(kIOMasterPortDefault,
-                                 IOServiceMatching("IODisplayConnect"),
-                                 &iterator);
-    
-    // If we were successful
-    if (result == kIOReturnSuccess) {
-        io_object_t service;
-        
-        while ((service = IOIteratorNext(iterator))) {
-            IODisplayGetFloatParameter(service,
-                                       kNilOptions,
-                                       CFSTR(kIODisplayBrightnessKey),
-                                       &brightness);
-            
-            // Let the object go
-            IOObjectRelease(service);
-        }
-    }
-    
-    return brightness;
-}
-
-- (Boolean)useDarkColors {
-    Boolean result = true;
-    CGImageRef screenGrab = [self contextColors];
-    NSColor *backGround = [self averageColor:screenGrab];
-    CFRelease(screenGrab);
-    double a = 1 - ( 0.299 * backGround.redComponent * 255 + 0.587 * backGround.greenComponent * 255 + 0.114 * backGround.blueComponent * 255)/255;
-    if (a < 0.5)
-        result = false; // bright colors - black font
-    else
-        result = true; // dark colors - white font
-    return result;
-}
-
-- (CGImageRef)contextColors {
-    int multiplier = 1;
-    if ([[NSScreen mainScreen] respondsToSelector:@selector(backingScaleFactor)])
-        multiplier = [[NSScreen mainScreen] backingScaleFactor];
-    
-    NSRect mf = myWin.frame;
-    NSRect sf = [NSScreen mainScreen].frame;
-    int w = mf.size.width;
-    int h = mf.size.height;
-    
-    int y = mf.origin.y;
-    if (y >= 0)
-        y = (sf.size.height - mf.origin.y - mf.size.height - fabs(sf.origin.y));
-    else
-        y = (sf.size.height + mf.origin.y + mf.size.height + sf.origin.y);
-    
-    if (y > sf.size.height) {
-        h = y - sf.size.height;
-        y = sf.size.height - h;
-    }
-    
-//    NSRect trueFrame = CGRectMake(mf.origin.x, y, w, h);
-//    CGImageRef screenShot = CGWindowListCreateImage(trueFrame, kCGWindowListOptionOnScreenBelowWindow, windowID, kCGWindowImageDefault);
-    
-    NSRect trueFrame = CGRectMake(mf.origin.x, y, w, h);
-    NSArray *blockedWindows = @[@"OSDUIHelper", @"Control Strip", @"loginwindow"];
-    NSMutableArray *blockedIDs = [[NSMutableArray alloc] init];
-    [blockedIDs addObject:[NSString stringWithFormat:@"%ld", (long)[myWin windowNumber]]];
-    
-    CFArrayRef windowList = CGWindowListCopyWindowInfo(kCGWindowListOptionOnScreenOnly, kCGNullWindowID);
-    for (long i = CFArrayGetCount(windowList) - 1; i >= 0; i--) {
-        CFDictionaryRef windowinfo = (CFDictionaryRef)(uintptr_t)CFArrayGetValueAtIndex(windowList, i);
-        CFStringRef owner = CFDictionaryGetValue(windowinfo, (id)kCGWindowOwnerName);
-        if ([blockedWindows containsObject:[NSString stringWithFormat:@"%@", owner]])
-            [blockedIDs addObject:[NSString stringWithFormat:@"%@", CFDictionaryGetValue(windowinfo, (id)kCGWindowNumber)]];
-    }
-    
-    CFArrayRef onScreenWindows = CGWindowListCreate(kCGWindowListOptionOnScreenOnly, kCGNullWindowID);
-    CFMutableArrayRef finalList = CFArrayCreateMutableCopy(NULL, 0, onScreenWindows);
-    for (long i = CFArrayGetCount(finalList) - 1; i >= 0; i--) {
-        CGWindowID window = (CGWindowID)(uintptr_t)CFArrayGetValueAtIndex(finalList, i);
-        if ([blockedIDs containsObject:[NSString stringWithFormat:@"%u", window]])
-            CFArrayRemoveValueAtIndex(finalList, i);
-    }
-    
-    CGImageRef screenShot = CGWindowListCreateImageFromArray(trueFrame, finalList, kCGWindowImageDefault);
-    CFRelease(windowList);
-    CFRelease(onScreenWindows);
-    CFRelease(finalList);
-    
-    return screenShot;
-}
-
-- (NSColor *)averageColor:(CGImageRef)test {
-    CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
-    unsigned char rgba[4];
-    CGContextRef context = CGBitmapContextCreate(rgba, 1, 1, 8, 4, colorSpace, kCGImageAlphaPremultipliedLast | kCGBitmapByteOrder32Big);
-    
-    CGContextDrawImage(context, CGRectMake(0, 0, 1, 1), test);
-    CGColorSpaceRelease(colorSpace);
-    CGContextRelease(context);
-    
-    if(rgba[3] > 0) {
-        CGFloat alpha = ((CGFloat)rgba[3])/255.0;
-        CGFloat multiplier = alpha/255.0;
-        return [NSColor colorWithRed:((CGFloat)rgba[0])*multiplier
-                               green:((CGFloat)rgba[1])*multiplier
-                                blue:((CGFloat)rgba[2])*multiplier
-                               alpha:alpha];
-    }
-    else {
-        return [NSColor colorWithRed:((CGFloat)rgba[0])/255.0
-                               green:((CGFloat)rgba[1])/255.0
-                                blue:((CGFloat)rgba[2])/255.0
-                               alpha:((CGFloat)rgba[3])/255.0];
-    }
-}
-
 @end
 
-/* wb_VolumeStateMachine */
-
-@interface wb_VolumeStateMachine : NSObject
-
-- (void)displayOSD;
-
-@end
-
-@implementation wb_VolumeStateMachine
-
-- (void)displayOSD {
-    [plugin showHUD:0 :[NSSound systemVolume] * 100];
-}
-
-@end
-
-/* wb_DisplayStateMachine */
-
-@interface wb_DisplayStateMachine : NSObject
-
-- (void)displayOSD;
-
-@end
-
-@implementation wb_DisplayStateMachine
-
-- (void)displayOSD {
-    [plugin showHUD:1 :ZKHookIvar(self, float, "_brightness") * 100];
-}
-
-@end
-
-/* wb_KeyboardStateMachine */
-
-@interface wb_KeyboardStateMachine : NSObject
-
-- (void)displayOSD;
-
-@end
-
-@implementation wb_KeyboardStateMachine
-
-- (void)displayOSD {
-    // NSLog(@"wb_ %@ : %@", self.className, NSStringFromSelector(_cmd));
-    [plugin showHUD:2 :mybrightness * 100];
-}
-
-@end
-
-/* wb_KeyboardALSAlgorithm */
-
-@interface wb_KeyboardALSAlgorithm : NSObject
-
-- (void)prefChanged:(id)arg1;
-
-@end
-
-@implementation wb_KeyboardALSAlgorithm
-
-- (void)prefChanged:(id)arg1 {
-    // NSLog(@"wb_ %@ : %@", self.className, NSStringFromSelector(_cmd));
-    ZKOrig(void, arg1);
-    mybrightness = ZKHookIvar(self, float, "_brightness");
-}
-
-@end
-
-/* wb_KeyboardALSAlgorithmHID */
-
-@interface wb_KeyboardALSAlgorithmHID : NSObject
-{
-    NSArray *possibleFloats;
-}
-
-- (void)setHardwareBrightness:(float)arg1 UsingFadeSpeed:(int)arg2;
-
-@end
-
-@implementation wb_KeyboardALSAlgorithmHID
-
-- (void)setHardwareBrightness:(float)arg1 UsingFadeSpeed:(int)arg2 {
-    /* Hard coded work around unless I can figure out some algorithm this follows */
-
-//    possibleFloats = @[@"0.000000",@"0.062500",@"0.073194",@"0.085717",@"0.100383",@"0.117559",@"0.137673",@"0.161228",@"0.188814",
-//                       @"0.221119",@"0.258952",@"0.303259",@"0.355145",@"0.415910",@"0.487071",@"0.570408",@"0.668003"];
-    
-//    BOOL hasSet = false;
-//    float bright = ZKHookIvar(self, float, "_brightness");
-//    NSString* numberA = [NSString stringWithFormat:@"%.6f", bright];
-//    for (int i = 0; i < possibleFloats.count; i++) {
-//        NSString* numberB = possibleFloats[i];
-//        if ([numberA isEqualToString:numberB]) {
-//            mybrightness = (float)((i * 6.25) / 100.0);
-//            hasSet = true;
-//            break;
-//        }
-//    }
-//
-//    if (!hasSet)
-//        mybrightness = arg1 / .668;
-    
-    // NSLog(@"wb_ %@ : %@", self.className, NSStringFromSelector(_cmd));
-    mybrightness = arg1 / 0.668;
-    ZKOrig(void, arg1, arg2);
-}
-
-@end
-
-/* wb_KeyboardALSAlgorithmLegacy */
-
-@interface wb_KeyboardALSAlgorithmLegacy : NSObject
-
-- (void)setHardwareBrightness:(float)arg1 UsingFadeSpeed:(int)arg2;
-
-@end
-
-@implementation wb_KeyboardALSAlgorithmLegacy
-
-- (void)setHardwareBrightness:(float)arg1 UsingFadeSpeed:(int)arg2 {
-    // NSLog(@"wb_ %@ : %@", self.className, NSStringFromSelector(_cmd));
-    mybrightness = arg1;
-    ZKOrig(void, arg1, arg2);
-}
-
-@end
-
-/* wb_ControlStrip.BrightnessButton */
-
-@interface wb_ControlStripBrightnessButton : NSObject
-
-- (void)brightnessDidChange:(id)arg1;
-
-@end
-
-@implementation wb_ControlStripBrightnessButton
-
-- (void)brightnessDidChange:(id)arg1 {
-    isControlStripDrawing++;
-    float screenBright = [plugin get_brightness] * 100;
-    if (screenBright > 96.00)
-        screenBright = 100.00;
-    [plugin showHUD:1 :screenBright];
-    ZKOrig(void, arg1);
-}
-
-@end
-
-/* wb_ControlStrip.VolumeButton */
-
-@interface wb_ControlStripVolumeButton : NSObject
-
-- (void)audioDidChange:(id)arg1;
-
-@end
-
-@implementation wb_ControlStripVolumeButton
-
-- (void)audioDidChange:(id)arg1 {
-    isControlStripDrawing++;
-    [plugin showHUD:0 :[NSSound systemVolume] * 100];
-    ZKOrig(void, arg1);
-}
-
-@end
-
-/* wb_OSDUIHelper.OSDRoundWindow */
-
-@interface wb_OSDRoundWindow : NSWindow
-@end
-
-@implementation wb_OSDRoundWindow
-@end
-
-/* wb_OSDUIHelper.OSDUIHelper */
-
-@interface wb_OSDUIHelperOSDUIHelper : NSObject
-- (void)showImage:(long long)arg1 onDisplayID:(unsigned int)arg2 priority:(unsigned int)arg3 msecUntilFade:(unsigned int)arg4 filledChiclets:(unsigned int)arg5 totalChiclets:(unsigned int)arg6 locked:(BOOL)arg7;
-@end
-
-@implementation wb_OSDUIHelperOSDUIHelper
+ZKSwizzleInterface(mech_OSDUIHelperOSDUIHelper, OSDUIHelper.OSDUIHelper, NSObject)
+@implementation mech_OSDUIHelperOSDUIHelper
 
 - (void)showImage:(long long)arg1 onDisplayID:(unsigned int)arg2 priority:(unsigned int)arg3 msecUntilFade:(unsigned int)arg4 filledChiclets:(unsigned int)arg5 totalChiclets:(unsigned int)arg6 locked:(BOOL)arg7 {
-//    NSLog(@"Testing : wb_ %@ : %@", self.className, NSStringFromSelector(_cmd));
+    // Brightness 1
+    // Birghtness slider 7
     
-    // If we're drawing our own window do nothing
-    if (myWin.alphaValue == 0) {
-        // Brightness 1
-        // Birghtness slider 7
+    // Keyboard 25
+    // Keyboard 26
+    // Keyboard 27
+    
+    // Volume 23
+    // Mute 4 / Unmute 5
+    // Volume slider 3
+    
+    // HUDS
+    // 0 - Volume
+    // 1 - Screen Brightness
+    // 2 - Keyboard Brightness
         
-        // Keyboard 25
-        // Keyboard 26
-        // Keyboard 27
-        
-        // Volume 23
-        // Mute 4 / Unmute 5
-        // Volume slider 3
-        
-        // HUDS
-        // 0 - Volume
-        // 1 - Screen Brightness
-        // 2 - Keyboard Brightness
-        
-        int HUDType = 0;
-        float a = arg5;
-        float b = arg6;
-        float percentageFull = (a / b) * 100.0;
-        
-        if (arg1 == 1 || arg1 == 7) {
-            HUDType = 1;
-        }
-        
-        if (arg1 == 25 || arg1 == 26 || arg1 == 27) {
-            HUDType = 2;
-        }
-        
-//        ZKOrig(void, arg1, arg2, arg3, arg4, arg5, arg6, arg7);
-        [[NSDistributedNotificationCenter defaultCenter] postNotificationName:@"com.w0lf.cleanHUDUpdate" object:[NSString stringWithFormat:@"%d:%f", HUDType, percentageFull] userInfo:nil deliverImmediately:true];
+    int HUDType = 0;
+    float a = arg5;
+    float b = arg6;
+    float percentageFull = (a / b) * 100.0;
+    
+    if (arg1 == 1 || arg1 == 7) {
+        HUDType = 1;
     }
+    
+    if (arg1 == 25 || arg1 == 26 || arg1 == 27) {
+        HUDType = 2;
+    }
+    
+    [plugin showHUD:HUDType :percentageFull];
+//    ZKOrig(void, arg1, arg2, arg3, arg4, arg5, arg6, arg7);
 }
 
 @end
