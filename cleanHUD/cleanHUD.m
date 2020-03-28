@@ -238,8 +238,9 @@ NSColor *sliderColor;
     [indi setWantsLayer:YES];
 
     // Set some properties for the window
+    [w setLevel:NSMainMenuWindowLevel + 999]; // Yeet
+    [w setCollectionBehavior:NSWindowCollectionBehaviorCanJoinAllSpaces];
     [w makeKeyAndOrderFront:nil];
-    [w setLevel:NSMainMenuWindowLevel + 2];
     [w setMovableByWindowBackground:NO];
     [w makeKeyAndOrderFront:nil];
     [w setIgnoresMouseEvents:YES];

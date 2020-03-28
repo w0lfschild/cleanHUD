@@ -288,7 +288,7 @@
 				DSTROOT = /;
 				INFOPLIST_FILE = cleanHUD/Info.plist;
 				INSTALL_PATH = "/Library/Application Support/MacEnhance/Plugins";
-				MARKETING_VERSION = 0.10.5;
+				MARKETING_VERSION = 0.10.6;
 				PRODUCT_BUNDLE_IDENTIFIER = "org.w0lf.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -309,7 +309,7 @@
 				DSTROOT = /;
 				INFOPLIST_FILE = cleanHUD/Info.plist;
 				INSTALL_PATH = "/Library/Application Support/MacEnhance/Plugins";
-				MARKETING_VERSION = 0.10.5;
+				MARKETING_VERSION = 0.10.6;
 				PRODUCT_BUNDLE_IDENTIFIER = "org.w0lf.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
