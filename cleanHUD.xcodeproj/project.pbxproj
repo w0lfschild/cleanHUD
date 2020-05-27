@@ -7,12 +7,23 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		FB5E0F41247DFC1B002C0F00 /* macOS.png in Resources */ = {isa = PBXBuildFile; fileRef = FB5E0F3C247DFC1B002C0F00 /* macOS.png */; };
+		FB5E0F42247DFC1B002C0F00 /* cleanHUDPrefs.m in Sources */ = {isa = PBXBuildFile; fileRef = FB5E0F3D247DFC1B002C0F00 /* cleanHUDPrefs.m */; };
+		FB5E0F43247DFC1B002C0F00 /* iOS.png in Resources */ = {isa = PBXBuildFile; fileRef = FB5E0F3E247DFC1B002C0F00 /* iOS.png */; };
+		FB5E0F44247DFC1B002C0F00 /* cleanHUDPrefs.xib in Resources */ = {isa = PBXBuildFile; fileRef = FB5E0F3F247DFC1B002C0F00 /* cleanHUDPrefs.xib */; };
 		FBF475021E0A111000EFFE6F /* AYProgressIndicator.m in Sources */ = {isa = PBXBuildFile; fileRef = FBF474FA1E0A111000EFFE6F /* AYProgressIndicator.m */; };
 		FBF475031E0A111000EFFE6F /* cleanHUD.m in Sources */ = {isa = PBXBuildFile; fileRef = FBF474FB1E0A111000EFFE6F /* cleanHUD.m */; };
 		FBF475071E0A111000EFFE6F /* ZKSwizzle.m in Sources */ = {isa = PBXBuildFile; fileRef = FBF475011E0A111000EFFE6F /* ZKSwizzle.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		FB5E0F36247DFC0C002C0F00 /* cleanHUDPrefs.bundle */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = cleanHUDPrefs.bundle; sourceTree = BUILT_PRODUCTS_DIR; };
+		FB5E0F38247DFC0C002C0F00 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		FB5E0F3C247DFC1B002C0F00 /* macOS.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = macOS.png; sourceTree = "<group>"; };
+		FB5E0F3D247DFC1B002C0F00 /* cleanHUDPrefs.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = cleanHUDPrefs.m; sourceTree = "<group>"; };
+		FB5E0F3E247DFC1B002C0F00 /* iOS.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = iOS.png; sourceTree = "<group>"; };
+		FB5E0F3F247DFC1B002C0F00 /* cleanHUDPrefs.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = cleanHUDPrefs.xib; sourceTree = "<group>"; };
+		FB5E0F40247DFC1B002C0F00 /* cleanHUDPrefs.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = cleanHUDPrefs.h; sourceTree = "<group>"; };
 		FBF474EF1E0A10F000EFFE6F /* cleanHUD.bundle */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = cleanHUD.bundle; sourceTree = BUILT_PRODUCTS_DIR; };
 		FBF474F31E0A10F000EFFE6F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		FBF474F91E0A111000EFFE6F /* AYProgressIndicator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AYProgressIndicator.h; sourceTree = "<group>"; };
@@ -23,6 +34,13 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		FB5E0F33247DFC0C002C0F00 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		FBF474EC1E0A10F000EFFE6F /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -33,10 +51,24 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		FB5E0F37247DFC0C002C0F00 /* cleanHUDPrefs */ = {
+			isa = PBXGroup;
+			children = (
+				FB5E0F3E247DFC1B002C0F00 /* iOS.png */,
+				FB5E0F3C247DFC1B002C0F00 /* macOS.png */,
+				FB5E0F40247DFC1B002C0F00 /* cleanHUDPrefs.h */,
+				FB5E0F3D247DFC1B002C0F00 /* cleanHUDPrefs.m */,
+				FB5E0F3F247DFC1B002C0F00 /* cleanHUDPrefs.xib */,
+				FB5E0F38247DFC0C002C0F00 /* Info.plist */,
+			);
+			path = cleanHUDPrefs;
+			sourceTree = "<group>";
+		};
 		FBF474E61E0A10F000EFFE6F = {
 			isa = PBXGroup;
 			children = (
 				FBF474F11E0A10F000EFFE6F /* cleanHUD */,
+				FB5E0F37247DFC0C002C0F00 /* cleanHUDPrefs */,
 				FBF474F01E0A10F000EFFE6F /* Products */,
 			);
 			sourceTree = "<group>";
@@ -45,6 +77,7 @@
 			isa = PBXGroup;
 			children = (
 				FBF474EF1E0A10F000EFFE6F /* cleanHUD.bundle */,
+				FB5E0F36247DFC0C002C0F00 /* cleanHUDPrefs.bundle */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -81,6 +114,23 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		FB5E0F35247DFC0C002C0F00 /* cleanHUDPrefs */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = FB5E0F3B247DFC0C002C0F00 /* Build configuration list for PBXNativeTarget "cleanHUDPrefs" */;
+			buildPhases = (
+				FB5E0F32247DFC0C002C0F00 /* Sources */,
+				FB5E0F33247DFC0C002C0F00 /* Frameworks */,
+				FB5E0F34247DFC0C002C0F00 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = cleanHUDPrefs;
+			productName = cleanHUDPrefs;
+			productReference = FB5E0F36247DFC0C002C0F00 /* cleanHUDPrefs.bundle */;
+			productType = "com.apple.product-type.bundle";
+		};
 		FBF474EE1E0A10F000EFFE6F /* cleanHUD */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = FBF474F61E0A10F000EFFE6F /* Build configuration list for PBXNativeTarget "cleanHUD" */;
@@ -108,6 +158,10 @@
 				LastUpgradeCheck = 1100;
 				ORGANIZATIONNAME = Wolfgang;
 				TargetAttributes = {
+					FB5E0F35247DFC0C002C0F00 = {
+						CreatedOnToolsVersion = 11.5;
+						ProvisioningStyle = Automatic;
+					};
 					FBF474EE1E0A10F000EFFE6F = {
 						CreatedOnToolsVersion = 6.2;
 						DevelopmentTeam = EX596BNL45;
@@ -129,11 +183,22 @@
 			projectRoot = "";
 			targets = (
 				FBF474EE1E0A10F000EFFE6F /* cleanHUD */,
+				FB5E0F35247DFC0C002C0F00 /* cleanHUDPrefs */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		FB5E0F34247DFC0C002C0F00 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FB5E0F44247DFC1B002C0F00 /* cleanHUDPrefs.xib in Resources */,
+				FB5E0F41247DFC1B002C0F00 /* macOS.png in Resources */,
+				FB5E0F43247DFC1B002C0F00 /* iOS.png in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		FBF474ED1E0A10F000EFFE6F /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -164,6 +229,14 @@
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		FB5E0F32247DFC0C002C0F00 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FB5E0F42247DFC1B002C0F00 /* cleanHUDPrefs.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		FBF474EB1E0A10F000EFFE6F /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -177,6 +250,62 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
+		FB5E0F39247DFC0C002C0F00 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 421;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEPLOYMENT_LOCATION = YES;
+				DSTROOT = /;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				INFOPLIST_FILE = cleanHUDPrefs/Info.plist;
+				INSTALL_PATH = "/Library/Application Support/MacEnhance/Preferences";
+				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				MARKETING_VERSION = 0.11.1;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.macenhance.cleanHUDPrefs;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = NO;
+				WRAPPER_EXTENSION = bundle;
+			};
+			name = Debug;
+		};
+		FB5E0F3A247DFC0C002C0F00 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 421;
+				DEPLOYMENT_LOCATION = YES;
+				DSTROOT = /;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				INFOPLIST_FILE = cleanHUDPrefs/Info.plist;
+				INSTALL_PATH = "/Library/Application Support/MacEnhance/Preferences";
+				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				MARKETING_VERSION = 0.11.1;
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.macenhance.cleanHUDPrefs;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = NO;
+				WRAPPER_EXTENSION = bundle;
+			};
+			name = Release;
+		};
 		FBF474F41E0A10F000EFFE6F /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -282,13 +411,13 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 91;
+				CURRENT_PROJECT_VERSION = 421;
 				DEPLOYMENT_LOCATION = YES;
 				DEVELOPMENT_TEAM = EX596BNL45;
 				DSTROOT = /;
 				INFOPLIST_FILE = cleanHUD/Info.plist;
 				INSTALL_PATH = "/Library/Application Support/MacEnhance/Plugins";
-				MARKETING_VERSION = 0.10.6;
+				MARKETING_VERSION = 0.11.1;
 				PRODUCT_BUNDLE_IDENTIFIER = "org.w0lf.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -303,13 +432,13 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 91;
+				CURRENT_PROJECT_VERSION = 421;
 				DEPLOYMENT_LOCATION = YES;
 				DEVELOPMENT_TEAM = EX596BNL45;
 				DSTROOT = /;
 				INFOPLIST_FILE = cleanHUD/Info.plist;
 				INSTALL_PATH = "/Library/Application Support/MacEnhance/Plugins";
-				MARKETING_VERSION = 0.10.6;
+				MARKETING_VERSION = 0.11.1;
 				PRODUCT_BUNDLE_IDENTIFIER = "org.w0lf.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -321,6 +450,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		FB5E0F3B247DFC0C002C0F00 /* Build configuration list for PBXNativeTarget "cleanHUDPrefs" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FB5E0F39247DFC0C002C0F00 /* Debug */,
+				FB5E0F3A247DFC0C002C0F00 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		FBF474EA1E0A10F000EFFE6F /* Build configuration list for PBXProject "cleanHUD" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

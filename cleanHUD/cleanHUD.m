@@ -141,6 +141,7 @@ NSColor *sliderColor;
             [plugin setupIconImages];
         }
     }
+    
     NSString *sld = [d stringForKey:@"sliderColor"];
     if (sld != nil) sliderColor = [plugin colorWithHexColorString:sld];
 }
@@ -294,7 +295,7 @@ NSColor *sliderColor;
 }
 
 - (void)showHUD :(int)hudType :(float)hudValue {
-    if (animateHUD == 0) [plugin readPreferences];
+    if (animateHUD <= 0) [plugin readPreferences];
     
     dispatch_async(dispatch_get_main_queue(), ^{
         // Dark mode / Light mode
